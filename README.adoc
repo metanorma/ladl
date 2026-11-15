@@ -1,0 +1,265 @@
+= ladl: the Label Auto-assignment Definition Language engine
+
+LADL — the Label Auto-assignment Definition Language — is a declarative
+modeling language for automatic label assignment (numbering, figure and
+table captions, note and example counting, ordered-list schemes) across
+technical documentation and publishing systems. This gem implements the
+LADL specification MN 112 as a runtime: it parses labeling style
+profiles, evaluates them against a content tree, and produces the
+labels.
+
+The engine is shared; flavor behavior comes entirely from profiles. The
+bundled profile, `lib/ladl/profiles/iso_iec_label_style.lml`, is the
+MN 112-A worked profile instance encoding the ISO/IEC Directives Part 2
+labeling conventions.
+
+== Installation
+
+    gem install ladl
+
+== Usage
+
+[source,ruby]
+----
+require "ladl"
+
+profile = Ladl.iso_iec_profile
+tree = Ladl::ContentElement.new(id: "doc", type: "document",
+  children: [
+    Ladl::ContentElement.new(id: "c1", type: "clause"),
+    Ladl::ContentElement.new(id: "ax1", type: "annex", children: [
+      Ladl::ContentElement.new(id: "ax1s1", type: "clause"),
+    ]),
+  ])
+
+result = Ladl::Runtime::Engine.new(profile).label(tree)
+result.local_for(tree.children.first)   # => "Clause 1"
+result.global_for(tree.children.first)  # => "Clause 1"
+result.local_for(tree.children.last.children.first) # => "A.1"
+----
+
+Load a custom profile written in the MN 112 `.lml` instance syntax:
+
+[source,ruby]
+----
+profile = Ladl.load_profile("my_flavor.lml")
+----
+
+Adapt a metanorma-document presentation tree:
+
+[source,ruby]
+----
+content = Ladl::Adapters::MetanormaDocument.wrap(mn_document_root)
+result = Ladl::Runtime::Engine.new(profile).label(content)
+----
+
+== Architecture
+
+LADL models labeling over three object trees (MN 112 "Architecture"):
+
+[cols="1,2,3"]
+|===
+| Tree | Model | Role
+
+| Content tree
+| `Ladl::ContentElement`
+| The elements being labeled. Provided by the host (a metanorma-document
+presentation tree wrapped by the adapter, or any duck-typed tree).
+
+| Context tree
+| `Ladl::LabelContext`
+| Label contexts that scope labeller counters (document, clause, annex,
+list), linked by `parent`.
+
+| Labeller tree
+| `Ladl::Labeller`
+| Hierarchical labellers bound to contexts, linked by `parent`; each
+carries a sequence and local/global label templates.
+|===
+
+.Profile loading
+[cols="1,3"]
+|===
+| `Ladl::Lml::Parser`
+| Parses the `.lml` instance syntax (comments, attribute assignments,
+lists, nested `{ }` maps, `definition` free-text blocks).
+
+| `Ladl::ProfileLoader`
+| Groups parsed instances by base class and hydrates them into the typed
+profile models through lutaml-model mappings (`Model.from_hash`); no
+hand-written serialization anywhere.
+
+| `Ladl::Profile`
+| The loaded style plus instance tables (labellers, contexts, templates,
+sequences).
+|===
+
+.Runtime
+[cols="1,3"]
+|===
+| `Ladl::Runtime::Resolver`
+| Wires profile references into indexes: labellers by context instance
+and element type, context instances by name and parent, sequence
+resolution against the registry and profile-defined sequences, and
+labeller-tree ancestry for `%pn`.
+
+| `Ladl::Runtime::Engine`
+| The labeling run: walks the content tree depth-first, instantiates
+label context instances, resolves each element's labeller, increments
+counters scoped by context instance and parent element, selects label
+templates by condition, and renders patterns. The walk plans and counts
+first, then renders, so conditional templates see final sibling counts.
+
+| `Ladl::Runtime::Renderer`
+| String interpolation of `%n`, `%pn`, `%parent` and `%self`.
+
+| `Ladl::Runtime::Result`
+| The output: a `Ladl::Label` per labeled element, lookup by element
+identity, with local and global label strings, hierarchical paths,
+sequence values and positions.
+
+| `Ladl::Sequences`
+| The default sequences MN 112 requires of a compliant runtime (decimal,
+Roman, alphabetic, Cyrillic, Greek, Chinese, Japanese, Korean, Arabic,
+Hebrew) plus the expansion rules and arithmetic for profile-defined
+sequence instances.
+|===
+
+== MN 112 concept map
+
+[cols="2,3"]
+|===
+| MN 112 concept | Class / module
+
+| Label | `Ladl::Label`
+| Labeller | `Ladl::Labeller`
+| Sequence | `Ladl::NumericSequence`, `Ladl::CharacterSequence`
+| Labeling format | `Ladl::Sequences::Formatters`
+| Label context | `Ladl::LabelContext`
+| Label context condition | `Ladl::LabelContextCondition`
+| Label template | `Ladl::LabelTemplate`
+| Label style | `Ladl::LabelStyle` (loaded into `Ladl::Profile`)
+| ContentElement | `Ladl::ContentElement`
+| String interpolation | `Ladl::Runtime::Renderer`
+| Runtime requirements (MN 112 "Runtime") | `Ladl::Runtime::Engine`
+| Default sequences | `Ladl::Sequences::Registry`
+| Value for position | `Ladl::Sequences.value_for`,
+`Sequence#value_for_position`
+| Algorithm to resolve the label | `Ladl::Runtime::Engine`
+| Instance model examples (MN 112-A) | `lib/ladl/profiles/iso_iec_label_style.lml`
+|===
+
+== Engine behavior notes
+
+* *Counter scope*. A labeller's counters live in the context instance
+its `context` binds it to: notes bound to `ClauseContext` count per
+clause (across subclauses); annex figures bound to `AnnexContext` count
+per annex; list items bound to `ListContext` count per list.
+
+* *Parent scoping*. A labeller with a `parent` labeller additionally
+scopes its counter per enclosing parent element: subfigure letters
+restart per figure; nested ordered-list items restart per containing
+item.
+
+* *`%pn`*. The parent value is the hierarchical path of the nearest
+enclosing element labeled by the current labeller's ancestor chain
+(subclause 1.2 for 1.2.1; the annex for Figure A.1), falling back to the
+nearest enclosing element of the parent labeller's type (an enclosing
+figure labeled by the annex figure labeller for a subfigure).
+
+* *`%parent` / `%self`*. The rendered global label of the context
+element anchoring the labeller's counter frame, and the element's own
+local label (used inside global templates).
+
+* *Conditional templates*. The first template whose condition evaluates
+to true wins; the first unconditional template is the fallback (MN 112
+algorithm).
+
+* *Direction*. `char_direction`/`direction` are carried on models;
+rendering emits logical order and relies on Unicode bidi for display.
+
+== Spec ambiguities and deviations
+
+MN 112 is a draft; the following points are ambiguous in the text and
+were resolved as documented. Each is testable in the suite and is a
+candidate for a spec ruling.
+
+1. *`ArabicNumericSequence`*. MN 112 defines it as Arabic-script RTL
+numerals (١, ٢, ٣), yet the MN 112-A ISO/IEC profile binds it to
+clauses whose documented outputs are Western digits ("Clause 1"). The
+engine maps `ArabicNumericSequence` to Western decimal digits
+(profile-compatible) and provides the Arabic-script sequence as
+`ArabicIndicNumericSequence`. Owner ruling needed: either the profile
+should reference a decimal sequence, or the outputs are meant to be
+Arabic-script.
+
+2. *`%parent` in the Japanese example*. MN 112's Japanese clause
+example (`%parentの%n`, expected 二の一) uses `%parent` where only
+`%pn` semantics (parent sequence value) produce the shown output; by
+the `%parent` definition (rendered global label) the output is
+第二章の一. The engine follows the definition; the example is flagged.
+
+3. *SimpleLabelStyle template*. MN 112's SimpleLabelStyle example wires
+the subclause template as `%parent.%n` but states the desired output
+"1.1", which requires `%pn.%n`. The engine follows the stated outputs.
+
+4. *`%pn` beyond one level*. MN 112 illustrates `%pn` with a single
+level (annex letter A) but the subfigure template (`Figure %pn %n)` →
+"Figure A.1 a)") requires the two-level parent path (A.1). The engine
+computes `%pn` as the hierarchical path (parent chain values joined
+with `.`).
+
+5. *Instantiation of annex clauses*. The profile distinguishes annex
+clauses only by their enclosing annex; no context is name-matched by
+the clause type inside annexes. The engine instantiates the child
+context of the element's labeller context (`AnnexClauseContext` for
+annex clauses) and falls back to name matching.
+
+6. *MN 112-A profile gaps*. The profile provides no labellers for
+subclauses inside annexes (A.1.1), nor for notes/examples inside
+annexes; such elements remain unlabeled. Profile extension needed for
+full ISO/IEC coverage.
+
+7. *`cycle_length`*. "Length after which sequence notation expands" is
+underdefined; the engine implements bijective (spreadsheet-style)
+decomposition in the given radix when present.
+
+8. *`append_suffix` expansion*. The expansion result after the
+character set is exhausted is underdefined; the engine appends cycling
+suffix characters symmetrically to `prepend_prefix`.
+
+9. *NumericSequence `format` attribute*. The named default sequences
+(decimal, Roman, ...) are MN 112 runtime requirements without profile
+syntax; the engine carries them as `NumericSequence` instances with a
+`format` attribute naming the labeling format.
+
+10. *`char_direction` vs `direction`*. MN 112 declares both on the
+sequence models; the engine carries both and treats `direction` as
+taking precedence.
+
+11. *Profile syntax vs lutaml-lml*. MN 112 profiles use unquoted
+instance names with `<` inheritance (`instance Foo < Bar`), which the
+released LutaML grammar (lutaml-lml) does not accept. The engine ships
+its own parser for that syntax subset; aligning the two grammars (or
+amending MN 112 to a supported syntax) is an open decision.
+
+12. *Counter restart for notes in subclauses*. The profile binds the
+note labeller to `ClauseContext`; notes count per clause across
+subclauses, and `%parent` anchors at the clause. If ISO/IEC requires
+per-subclause note counting, the profile (not the engine) needs
+adjustment.
+
+== Development
+
+    bundle install
+    bundle exec rspec
+
+Run the full test suite with `bundle exec rspec`. The suite covers the
+`.lml` parser, the profile loader against the bundled ISO/IEC profile,
+every default sequence, the core models, the resolver, the renderer,
+the engine algorithm (counter scoping, `%pn` resolution, conditional
+templates) and the metanorma-document adapter.
+
+== License
+
+The gem is available as open source under the terms of the MIT license.
