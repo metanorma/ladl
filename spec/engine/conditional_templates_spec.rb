@@ -8,7 +8,7 @@ RSpec.describe "conditional label templates (MN 112 LabelContextCondition)" do
   end
 
   def note_profile
-    Ladl.iso_iec_profile
+    Ladl.load_profile(LADL_MN112A_PROFILE)
   end
 
   it "uses the numbered template when the context has more than one note" do

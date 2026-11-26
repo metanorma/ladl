@@ -9,11 +9,12 @@ profiles, evaluates them against a content tree, and produces the
 labels.
 
 The engine is shared; flavor behavior comes entirely from profiles. The
-bundled profiles are `lib/ladl/profiles/iso_iec_label_style.lml` (the
-MN 112-A worked profile instance encoding the ISO/IEC Directives Part 2
-labeling conventions) and `lib/ladl/profiles/ietf_label_style.lml` (the
-Internet-Draft/RFC conventions, verified against the xml2rfc text
-writer and idnits).
+engine ships NO bundled profiles: each flavor profile lives in its
+flavor gem and each taste profile in metanorma-taste (per the release
+plan, one LADL profile extraction per flavor gem / per taste), loaded
+through `Ladl.load_profile`. The MN 112-A worked profile instance from
+the specification is kept as the conformance fixture
+(`spec/fixtures/iso_iec_label_style.lml`).
 
 == Installation
 

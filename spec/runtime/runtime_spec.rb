@@ -45,7 +45,7 @@ RSpec.describe Ladl::Runtime::Renderer do
 end
 
 RSpec.describe Ladl::Runtime::Resolver do
-  let(:profile) { Ladl.iso_iec_profile }
+  let(:profile) { Ladl.load_profile(LADL_MN112A_PROFILE) }
   let(:resolver) { described_class.new(profile) }
 
   it "resolves labellers by context instance and element type" do

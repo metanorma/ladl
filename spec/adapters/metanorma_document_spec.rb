@@ -199,7 +199,7 @@ RSpec.describe Ladl::Adapters::MetanormaDocument do
 
     it "labels the stubbed metanorma-document tree per ISO/IEC conventions" do
       wrapped = described_class.wrap(tree)
-      result = Ladl::Runtime::Engine.new(Ladl.iso_iec_profile).label(wrapped)
+      result = Ladl::Runtime::Engine.new(Ladl.load_profile(LADL_MN112A_PROFILE)).label(wrapped)
       by_id = result.labels_by_element_id
       expect(by_id["c1"].value).to eq("Clause 1")
       expect(by_id["c1s1"].value).to eq("1.1")
