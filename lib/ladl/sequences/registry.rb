@@ -35,7 +35,7 @@ module Ladl
 
         {
           "DecimalNumericSequence" => numeric.call("decimal"),
-          "ArabicNumericSequence" => numeric.call("decimal"),
+          "ArabicNumericSequence" => numeric.call("arabic_indic"),
           "ArabicIndicNumericSequence" => arabic_indic_sequence.call,
           "RomanUpperNumericSequence" => numeric.call("roman_upper"),
           "RomanLowerNumericSequence" => numeric.call("roman_lower"),

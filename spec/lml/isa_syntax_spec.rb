@@ -12,7 +12,7 @@ RSpec.describe Ladl::Lml::Parser do
       instance S < LabelStyle {
         name = "S"
         labellers = ["id:clause_labeller"]
-        sequences = [ArabicNumericSequence]
+        sequences = [DecimalNumericSequence]
         templates = [ClauseTemplate]
         contexts = [DocumentContext]
       }
@@ -24,7 +24,7 @@ RSpec.describe Ladl::Lml::Parser do
       }
       instance ClauseLabeller < Labeller {
         id = "clause_labeller"
-        sequence = ArabicNumericSequence
+        sequence = DecimalNumericSequence
         context = DocumentContext
         type = "clause"
         template = ClauseTemplate

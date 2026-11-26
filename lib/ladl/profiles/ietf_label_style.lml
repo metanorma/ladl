@@ -46,7 +46,7 @@ instance IETFLabelStyle < LabelStyle {
 
   // References to all sequences used in this style
   sequences = [
-    ArabicNumericSequence,
+    DecimalNumericSequence,
     AlphaUpperNumericSequence
   ]
 
@@ -123,7 +123,7 @@ instance ClauseGlobalLabelTemplate < LabelTemplate {
 
 instance ClauseLabeller < Labeller {
   id = "clause_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = DocumentContext
   type = "clause"
   template = ClauseLabelTemplate
@@ -143,7 +143,7 @@ instance SubclauseGlobalLabelTemplate < LabelTemplate {
 
 instance SubclauseLabeller < Labeller {
   id = "subclause_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = ClauseContext
   parent = ClauseLabeller
   type = "subclause"
@@ -186,7 +186,7 @@ instance AnnexClauseGlobalLabelTemplate < LabelTemplate {
 
 instance AnnexClauseLabeller < Labeller {
   id = "annex_clause_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = AnnexContext
   parent = AnnexLabeller
   type = "clause"
@@ -207,7 +207,7 @@ instance AnnexSubclauseGlobalLabelTemplate < LabelTemplate {
 
 instance AnnexSubclauseLabeller < Labeller {
   id = "annex_subclause_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = AnnexClauseContext
   parent = AnnexClauseLabeller
   type = "subclause"
@@ -225,7 +225,7 @@ instance FigureLabelTemplate < LabelTemplate {
 
 instance FigureLabeller < Labeller {
   id = "figure_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = DocumentContext
   type = "figure"
   template = FigureLabelTemplate
@@ -239,7 +239,7 @@ instance AnnexFigureLabelTemplate < LabelTemplate {
 
 instance AnnexFigureLabeller < Labeller {
   id = "annex_figure_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = AnnexContext
   parent = AnnexLabeller
   type = "figure"
@@ -254,7 +254,7 @@ instance TableLabelTemplate < LabelTemplate {
 
 instance TableLabeller < Labeller {
   id = "table_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = DocumentContext
   type = "table"
   template = TableLabelTemplate
@@ -268,7 +268,7 @@ instance AnnexTableLabelTemplate < LabelTemplate {
 
 instance AnnexTableLabeller < Labeller {
   id = "annex_table_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = AnnexContext
   parent = AnnexLabeller
   type = "table"
@@ -285,7 +285,7 @@ instance NoteLabelTemplate < LabelTemplate {
 
 instance NoteLabeller < Labeller {
   id = "note_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = ClauseContext
   type = "note"
   template = NoteLabelTemplate

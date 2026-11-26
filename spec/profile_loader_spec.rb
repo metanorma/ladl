@@ -31,7 +31,7 @@ RSpec.describe Ladl::ProfileLoader do
       expect(labeller.id).to eq("clause_labeller")
       expect(labeller.type).to eq("clause")
       expect(labeller.context).to eq("DocumentContext")
-      expect(labeller.sequence).to eq("ArabicNumericSequence")
+      expect(labeller.sequence).to eq("DecimalNumericSequence")
       expect(labeller.template.first.pattern).to eq("Clause %n")
       expect(labeller.global_template.first.pattern).to eq("Clause %n")
     end
@@ -156,7 +156,7 @@ RSpec.describe Ladl::ProfileLoader do
       source = <<~LML
         instance S < LabelStyle { name = "S" sequences = [Triple] }
         instance Triple < NumericSequence {
-          base_sequence = ArabicNumericSequence
+          base_sequence = DecimalNumericSequence
           initial_value = 1
           increment = 3
         }

@@ -186,14 +186,13 @@ MN 112 is a draft; the following points are ambiguous in the text and
 were resolved as documented. Each is testable in the suite and is a
 candidate for a spec ruling.
 
-1. *`ArabicNumericSequence`*. MN 112 defines it as Arabic-script RTL
-numerals (١, ٢, ٣), yet the MN 112-A ISO/IEC profile binds it to
-clauses whose documented outputs are Western digits ("Clause 1"). The
-engine maps `ArabicNumericSequence` to Western decimal digits
-(profile-compatible) and provides the Arabic-script sequence as
-`ArabicIndicNumericSequence`. Owner ruling needed: either the profile
-should reference a decimal sequence, or the outputs are meant to be
-Arabic-script.
+1. *`ArabicNumericSequence`*. RESOLVED 2026-11-26 by engine evidence:
+ISO/IEC deliverables label clauses with Western digits, so the bundled
+ISO/IEC and IETF profiles now bind clause numbering to
+`DecimalNumericSequence`, and the registry restores
+`ArabicNumericSequence` to its MN 112 definition (Arabic-script
+numerals ١, ٢, ٣). `ArabicIndicNumericSequence` (the RTL example's
+name in MN 112) remains as the explicit RTL-flavored spelling.
 
 2. *`%parent` in the Japanese example*. MN 112's Japanese clause
 example (`%parentの%n`, expected 二の一) uses `%parent` where only
@@ -205,11 +204,11 @@ the `%parent` definition (rendered global label) the output is
 the subclause template as `%parent.%n` but states the desired output
 "1.1", which requires `%pn.%n`. The engine follows the stated outputs.
 
-4. *`%pn` beyond one level*. MN 112 illustrates `%pn` with a single
-level (annex letter A) but the subfigure template (`Figure %pn %n)` →
-"Figure A.1 a)") requires the two-level parent path (A.1). The engine
-computes `%pn` as the hierarchical path (parent chain values joined
-with `.`).
+4. *`%pn` beyond one level*. RESOLVED by the spec's own example: the
+MN 112 subfigure template (`Figure %pn %n)` → "Figure A.1 a)") is only
+satisfiable when `%pn` carries the two-level parent path (A.1), so the
+engine computes `%pn` as the hierarchical path (parent chain values
+joined with `.`).
 
 5. *Instantiation of annex clauses*. The profile distinguishes annex
 clauses only by their enclosing annex; no context is name-matched by
@@ -225,18 +224,21 @@ notes/examples, so the profile now carries `AnnexSubclauseLabeller`,
 `AnnexClauseContext`). The suite covers A.1.1 and annex
 notes/examples end to end.
 
-7. *`cycle_length`*. "Length after which sequence notation expands" is
-underdefined; the engine implements bijective (spreadsheet-style)
-decomposition in the given radix when present.
+7. *`cycle_length`*. RESOLVED by engine evidence: the ISO annex
+expansion (Annex Z → Annex AA) that isodoc implements is bijective
+(spreadsheet-style) decomposition, which is what the engine applies
+when `cycle_length` is present.
 
 8. *`append_suffix` expansion*. The expansion result after the
 character set is exhausted is underdefined; the engine appends cycling
 suffix characters symmetrically to `prepend_prefix`.
 
-9. *NumericSequence `format` attribute*. The named default sequences
-(decimal, Roman, ...) are MN 112 runtime requirements without profile
-syntax; the engine carries them as `NumericSequence` instances with a
-`format` attribute naming the labeling format.
+9. *NumericSequence `format` attribute*. RESOLVED: profile-defined
+sequence instances are supported by the profile syntax — an `.lml`
+profile can declare `instance X < NumericSequence { format = "decimal"
+... }` (or derive from a registry sequence via `base_sequence`), and
+the bundled registry defaults (decimal, Roman, alphabetic, ...) are
+`NumericSequence` instances selected by the `format` attribute.
 
 10. *`char_direction` vs `direction`*. MN 112 declares both on the
 sequence models; the engine carries both and treats `direction` as

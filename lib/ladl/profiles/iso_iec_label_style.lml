@@ -43,7 +43,7 @@ instance ISOIECLabelStyle < LabelStyle {
 
   // References to all sequences used in this style
   sequences = [
-    ArabicNumericSequence,
+    DecimalNumericSequence,
     AlphaLowerNumericSequence,
     AlphaUpperNumericSequence,
     RomanLowerNumericSequence
@@ -137,7 +137,7 @@ instance ClauseGlobalLabelTemplate < LabelTemplate {
 
 instance ClauseLabeller < Labeller {
   id = "clause_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = DocumentContext
   type = "clause"
   template = ClauseLabelTemplate
@@ -158,7 +158,7 @@ instance SubclauseGlobalLabelTemplate < LabelTemplate {
 
 instance SubclauseLabeller < Labeller {
   id = "subclause_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = ClauseContext
   parent = ClauseLabeller
   type = "subclause"
@@ -212,7 +212,7 @@ instance AnnexClauseGlobalLabelTemplate < LabelTemplate {
 
 instance AnnexClauseLabeller < Labeller {
   id = "annex_clause_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = AnnexContext
   parent = AnnexLabeller
   type = "clause"
@@ -236,7 +236,7 @@ instance AnnexSubclauseGlobalLabelTemplate < LabelTemplate {
 
 instance AnnexSubclauseLabeller < Labeller {
   id = "annex_subclause_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = AnnexClauseContext
   parent = AnnexClauseLabeller
   type = "subclause"
@@ -250,7 +250,7 @@ instance AnnexSubclauseLabeller < Labeller {
 // through to the main-document labellers.
 instance AnnexNoteLabeller < Labeller {
   id = "annex_note_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = AnnexClauseContext
   type = "note"
   template = [NoteSingleLabelTemplate, NoteMultipleLabelTemplate]
@@ -260,7 +260,7 @@ instance AnnexNoteLabeller < Labeller {
 
 instance AnnexExampleLabeller < Labeller {
   id = "annex_example_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = AnnexClauseContext
   type = "example"
   template = [ExampleSingleLabelTemplate, ExampleMultipleLabelTemplate]
@@ -281,7 +281,7 @@ instance FigureGlobalLabelTemplate < LabelTemplate {
 
 instance FigureLabeller < Labeller {
   id = "figure_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = DocumentContext
   type = "figure"
   template = FigureLabelTemplate
@@ -301,7 +301,7 @@ instance AnnexFigureGlobalLabelTemplate < LabelTemplate {
 
 instance AnnexFigureLabeller < Labeller {
   id = "annex_figure_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = AnnexContext
   parent = AnnexLabeller
   type = "figure"
@@ -345,7 +345,7 @@ instance TableGlobalLabelTemplate < LabelTemplate {
 
 instance TableLabeller < Labeller {
   id = "table_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = DocumentContext
   type = "table"
   template = TableLabelTemplate
@@ -365,7 +365,7 @@ instance AnnexTableGlobalLabelTemplate < LabelTemplate {
 
 instance AnnexTableLabeller < Labeller {
   id = "annex_table_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = AnnexContext
   parent = AnnexLabeller
   type = "table"
@@ -405,7 +405,7 @@ instance NoteMultipleGlobalLabelTemplate < LabelTemplate {
 
 instance NoteLabeller < Labeller {
   id = "note_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = ClauseContext
   type = "note"
   template = [NoteSingleLabelTemplate, NoteMultipleLabelTemplate]
@@ -419,7 +419,7 @@ instance NoteLabeller < Labeller {
 // than continuing the enclosing clause's counter.
 instance SubclauseNoteLabeller < Labeller {
   id = "subclause_note_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = SubclauseContext
   type = "note"
   template = [NoteSingleLabelTemplate, NoteMultipleLabelTemplate]
@@ -458,7 +458,7 @@ instance ExampleMultipleGlobalLabelTemplate < LabelTemplate {
 
 instance ExampleLabeller < Labeller {
   id = "example_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = ClauseContext
   type = "example"
   template = [ExampleSingleLabelTemplate, ExampleMultipleLabelTemplate]
@@ -470,7 +470,7 @@ instance ExampleLabeller < Labeller {
 // example_anchor_names restarts the counter per clause and subclause).
 instance SubclauseExampleLabeller < Labeller {
   id = "subclause_example_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = SubclauseContext
   type = "example"
   template = [ExampleSingleLabelTemplate, ExampleMultipleLabelTemplate]
@@ -491,7 +491,7 @@ instance FormulaGlobalLabelTemplate < LabelTemplate {
 
 instance FormulaLabeller < Labeller {
   id = "formula_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = DocumentContext
   type = "formula"
   template = FormulaLabelTemplate
@@ -511,7 +511,7 @@ instance AnnexFormulaGlobalLabelTemplate < LabelTemplate {
 
 instance AnnexFormulaLabeller < Labeller {
   id = "annex_formula_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = AnnexContext
   parent = AnnexLabeller
   type = "formula"
@@ -539,7 +539,7 @@ instance ListGlobalLabelTemplate < LabelTemplate {
 
 instance ListLabeller < Labeller {
   id = "list_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = ClauseContext
   type = "list"
   template = ListLabelTemplate
@@ -559,7 +559,7 @@ instance AnnexListGlobalLabelTemplate < LabelTemplate {
 
 instance AnnexListLabeller < Labeller {
   id = "annex_list_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = AnnexContext
   parent = AnnexLabeller
   type = "list"
@@ -576,7 +576,7 @@ instance UnorderedListItemLabelTemplate < LabelTemplate {
 
 instance UnorderedListItemLabeller < Labeller {
   id = "unordered_list_item_labeller"
-  sequence = ArabicNumericSequence  // Not used but required
+  sequence = DecimalNumericSequence  // Not used but required
   context = ListContext
   type = "list_item_unordered"
   template = UnorderedListItemLabelTemplate
@@ -606,7 +606,7 @@ instance OrderedListItemLevel2LabelTemplate < LabelTemplate {
 
 instance OrderedListItemLevel2Labeller < Labeller {
   id = "ordered_list_item_level2_labeller"
-  sequence = ArabicNumericSequence
+  sequence = DecimalNumericSequence
   context = ListContext
   parent = OrderedListItemLevel1Labeller
   type = "list_item_ordered_level2"

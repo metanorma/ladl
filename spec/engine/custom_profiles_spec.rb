@@ -171,7 +171,7 @@ RSpec.describe "the MN 112 SimpleLabelStyle worked example" do
       instance SimpleLabelStyle < LabelStyle {
         name = "Simple Label Style"
         labellers = ["id:figure_labeller", "id:clause_labeller", "id:subclause_labeller"]
-        sequences = [ArabicNumericSequence]
+        sequences = [DecimalNumericSequence]
         templates = [FigureLabelTemplate, ClauseLabelTemplate, SubClauseLabelTemplate]
         contexts = [DocumentContext, ClauseContext, SubClauseContext]
       }
@@ -188,7 +188,7 @@ RSpec.describe "the MN 112 SimpleLabelStyle worked example" do
       }
       instance ClauseLabeller < Labeller {
         id = "clause_labeller"
-        sequence = ArabicNumericSequence
+        sequence = DecimalNumericSequence
         context = DocumentContext
         template = ClauseLabelTemplate
         type = "clause"
@@ -198,7 +198,7 @@ RSpec.describe "the MN 112 SimpleLabelStyle worked example" do
       }
       instance SubClauseLabeller < Labeller {
         id = "subclause_labeller"
-        sequence = ArabicNumericSequence
+        sequence = DecimalNumericSequence
         context = ClauseContext
         parent = ClauseLabeller
         template = SubClauseLabelTemplate
@@ -209,7 +209,7 @@ RSpec.describe "the MN 112 SimpleLabelStyle worked example" do
       }
       instance FigureLabeller < Labeller {
         id = "figure_labeller"
-        sequence = ArabicNumericSequence
+        sequence = DecimalNumericSequence
         context = DocumentContext
         template = FigureLabelTemplate
         global_template = FigureGlobalLabelTemplate

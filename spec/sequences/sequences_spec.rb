@@ -13,15 +13,10 @@ RSpec.describe Ladl::Sequences do
       expect(seq_value("DecimalNumericSequence", 12)).to eq("12")
     end
 
-    it "maps ArabicNumericSequence to Western digits (profile-compatible)" do
-      expect(seq_value("ArabicNumericSequence", 1)).to eq("1")
-      expect(seq_value("ArabicNumericSequence", 27)).to eq("27")
-    end
-
-    it "provides Arabic-script numerals under ArabicIndicNumericSequence" do
-      expect(seq_value("ArabicIndicNumericSequence", 1)).to eq("١")
-      expect(seq_value("ArabicIndicNumericSequence", 9)).to eq("٩")
-      expect(seq_value("ArabicIndicNumericSequence", 12)).to eq("١٢")
+    it "provides Arabic-script numerals under ArabicNumericSequence (MN 112 definition)" do
+      expect(seq_value("ArabicNumericSequence", 1)).to eq("١")
+      expect(seq_value("ArabicNumericSequence", 9)).to eq("٩")
+      expect(seq_value("ArabicNumericSequence", 12)).to eq("١٢")
     end
 
     it "provides uppercase Roman numerals" do

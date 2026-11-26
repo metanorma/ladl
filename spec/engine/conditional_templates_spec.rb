@@ -58,7 +58,7 @@ RSpec.describe "conditional label templates (MN 112 LabelContextCondition)" do
       }
       instance N < Labeller {
         id = "n"
-        sequence = ArabicNumericSequence
+        sequence = DecimalNumericSequence
         context = DocumentContext
         type = "note"
         template = [Tgt, Teq]
@@ -86,7 +86,7 @@ RSpec.describe "conditional label templates (MN 112 LabelContextCondition)" do
       }
       instance N < Labeller {
         id = "n"
-        sequence = ArabicNumericSequence
+        sequence = DecimalNumericSequence
         context = DocumentContext
         type = "note"
         template = Teq
@@ -108,7 +108,7 @@ RSpec.describe "conditional label templates (MN 112 LabelContextCondition)" do
       instance DocumentContext < LabelContext { name = "document" }
       instance N < Labeller {
         id = "n"
-        sequence = ArabicNumericSequence
+        sequence = DecimalNumericSequence
         context = DocumentContext
         type = "note"
       }
