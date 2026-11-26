@@ -169,7 +169,8 @@ module Ladl
         return Array(element.children) if element.respond_to?(:children)
 
         name = class_name(element)
-        if SECTION_CLASSES.include?(name) || name =~ /Annex/
+        if SECTION_CLASSES.include?(name) || name == "Sections" ||
+            name =~ /Annex/
           section_children(element)
         elsif LIST_CLASSES.include?(name)
           Array(element.listitem)
@@ -186,6 +187,20 @@ module Ladl
 
       def section_children(element)
         children = []
+        # The standoc-style Sections container keeps clauses in
+        # kind-specific collections (clause, introduction, terms,
+        # definitions, references, floating_title) in document order.
+        if class_name(element) == "Sections"
+          %i[introduction clause terms definitions references
+            floating_title].each do |collection|
+            if element.respond_to?(collection)
+              Array(element.public_send(collection)).each do |c|
+                children << c
+              end
+            end
+          end
+          return children
+        end
         Array(element.blocks).each do |block|
           children << block
           Array(block.notes).each { |n| children << n } if block.respond_to?(:notes)
