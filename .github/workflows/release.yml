@@ -70,14 +70,26 @@ jobs:
         id: version
         # From the version file, not git describe: the default checkout
         # is shallow with no tags, so git describe failed and the empty
-        # version produced `gem install "lutaml-model:"`.
+        # version produced `gem install "ladl:"`.
         run: |
           git pull --ff-only origin main
-          echo "version=$(ruby -e 'print File.read(%q{lib/lutaml/model/version.rb})[/VERSION\s*=\s*"([^"]+)"/, 1]')" >> "$GITHUB_OUTPUT"
+          echo "version=$(ruby -e 'print File.read(%q{lib/ladl/version.rb})[/VERSION\s*=\s*"([^"]+)"/, 1]')" >> "$GITHUB_OUTPUT"
       - name: Install and smoke the released gem
         run: |
-          gem install "lutaml-model:${{ steps.version.outputs.version }}" --no-document
-          # The round-trip script exercises all five formats; the TOML
-          # legs require an adapter gem to be present.
-          gem install tomlib toml-rb --no-document
-          ruby .github/scripts/test_installed_gem.rb
+          gem install "ladl:${{ steps.version.outputs.version }}" --no-document
+          # Boot the shipped gem from its own load paths and assert the
+          # bundled profiles load and label: the ISO/IEC profile must
+          # produce "Clause 1" (packaging regressions — gemspec globs
+          # dropping the .lml profiles — must fail the release run).
+          ruby -e '
+            require "ladl";
+            tree = Ladl::ContentElement.new(id: "doc", type: "document",
+              children: [Ladl::ContentElement.new(id: "c1", type: "clause"),
+                         Ladl::ContentElement.new(id: "a1", type: "annex")]);
+            r = Ladl::Runtime::Engine.new(Ladl.iso_iec_profile).label(tree);
+            raise "iso profile broken" unless r.labels_by_element_id["c1"].value == "Clause 1";
+            raise "iso annex broken" unless r.labels_by_element_id["a1"].value == "Annex A";
+            g = Ladl::Runtime::Engine.new(Ladl.ietf_profile).label(tree);
+            raise "ietf profile broken" unless g.labels_by_element_id["c1"].value == "1.";
+            raise "ietf annex broken" unless g.labels_by_element_id["a1"].value == "Appendix A."
+          '
