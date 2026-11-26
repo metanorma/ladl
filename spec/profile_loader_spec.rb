@@ -191,3 +191,46 @@ RSpec.describe Ladl::ProfileLoader do
     end
   end
 end
+
+RSpec.describe Ladl::ProfileLoader, "YAML realization" do
+  let(:yaml_path) { File.expand_path("fixtures/iso_iec_label_style.yaml", __dir__) }
+  let(:lml_profile) { described_class.load_file(LADL_MN112A_PROFILE) }
+  let(:yaml_profile) { described_class.load_file(yaml_path) }
+
+  {
+    labeller: :labeller_names, context: :context_names,
+    template: :template_names
+  }.each do |accessor, names|
+    it "builds identical #{accessor}s" do
+      lml_profile.public_send(names).each do |name|
+        expect(yaml_profile.public_send(accessor, name).to_hash)
+          .to eq(lml_profile.public_send(accessor, name).to_hash)
+      end
+    end
+  end
+
+  it "loads the same style" do
+    expect(yaml_profile.style.to_hash).to eq(lml_profile.style.to_hash)
+  end
+
+  it "has the same labeller, context and template names" do
+    expect(yaml_profile.labeller_names).to eq(lml_profile.labeller_names)
+    expect(yaml_profile.context_names).to eq(lml_profile.context_names)
+    expect(yaml_profile.template_names).to eq(lml_profile.template_names)
+  end
+
+  it "loads from a string with load_yaml" do
+    profile = described_class.load_yaml(File.read(yaml_path))
+    expect(profile.labeller_names.size).to eq(25)
+  end
+
+  it "rejects YAML without an instances list" do
+    expect { described_class.load_yaml("foo: bar") }
+      .to raise_error(Ladl::ParseError, /instances/)
+  end
+
+  it "rejects malformed YAML" do
+    expect { described_class.load_yaml("a: [") }
+      .to raise_error(Ladl::ParseError, /invalid YAML/)
+  end
+end

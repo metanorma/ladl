@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
+require "yaml"
+
 module Ladl
-  # Loads LADL profiles written in the LutaML `.lml` instance syntax
+  # Loads LADL profiles written in the LutaML `.lml` instance syntax or
+  # its YAML realization
   # (MN 112 worked profile format) into typed Ladl profile models.
   #
   # Every instance is hydrated through the lutaml-model framework
@@ -26,17 +29,65 @@ module Ladl
         new.load_lml(text)
       end
 
+      def load_yaml(text)
+        new.load_yaml(text)
+      end
+
       def load_file(path)
         new.load_file(path)
       end
     end
 
+    # Loads a profile file, choosing the realization by extension:
+    # `.yaml`/`.yml` as YAML, anything else as lml.
     def load_file(path)
-      load_lml(File.read(path, encoding: "UTF-8"))
+      text = File.read(path, encoding: "UTF-8")
+      case File.extname(path).downcase
+      when ".yaml", ".yml" then load_yaml(text)
+      else load_lml(text)
+      end
     end
 
     def load_lml(text)
-      document = Lml::Parser.parse(text)
+      build_from_document(Lml::Parser.parse(text))
+    end
+
+    # Loads the YAML realization of an MN 112 profile. The document is a
+    # mapping with an `instances` list; each entry has `name`, `base`
+    # and an `attributes` mapping, mirroring the lml instance form.
+    def load_yaml(text)
+      data = begin
+        YAML.safe_load(text)
+      rescue Psych::Exception => e
+        raise Ladl::ParseError, "invalid YAML profile: #{e.message}"
+      end
+      build_from_document(yaml_document(data))
+    end
+
+    private
+
+    def yaml_document(data)
+      entries = data.is_a?(Hash) ? data["instances"] : nil
+      unless entries.is_a?(Array)
+        raise Ladl::ParseError,
+          "YAML profile must be a mapping with an 'instances' list"
+      end
+
+      instances = entries.map do |entry|
+        unless entry.is_a?(Hash) && entry["name"]
+          raise Ladl::ParseError,
+            "YAML profile instance needs a 'name': #{entry.inspect}"
+        end
+        Lml::Instance.new(
+          name: entry["name"],
+          base: entry["base"],
+          attributes: entry["attributes"] || {},
+        )
+      end
+      Lml::Document.new(instances: instances)
+    end
+
+    def build_from_document(document)
       @index = {}
       document.instances.each do |instance|
         raise Ladl::ParseError,
@@ -46,8 +97,6 @@ module Ladl
       end
       build_profile(document)
     end
-
-    private
 
     def build_profile(document)
       built = {}
