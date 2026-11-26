@@ -4,7 +4,7 @@ require "spec_helper"
 
 RSpec.describe Ladl::ProfileLoader do
   describe ".load_file with the bundled ISO/IEC profile" do
-    subject(:profile) { described_class.load_file(Ladl::ISO_IEC_PROFILE_PATH) }
+    subject(:profile) { described_class.load_file(LADL_MN112A_PROFILE) }
 
     it "loads the ISO/IEC label style" do
       expect(profile.style.name).to eq("ISO/IEC Label Style")
@@ -183,10 +183,10 @@ RSpec.describe Ladl::ProfileLoader do
     end
   end
 
-  describe "Ladl.load_profile / Ladl.iso_iec_profile" do
+  describe "Ladl.load_profile with the MN 112-A worked profile" do
     it "exposes the profile loader at the root module" do
-      expect(Ladl.iso_iec_profile).to be_a(Ladl::Profile)
-      expect(Ladl.load_profile(Ladl::ISO_IEC_PROFILE_PATH).style.name)
+      expect(Ladl.load_profile(LADL_MN112A_PROFILE)).to be_a(Ladl::Profile)
+      expect(Ladl.load_profile(LADL_MN112A_PROFILE).style.name)
         .to eq("ISO/IEC Label Style")
     end
   end

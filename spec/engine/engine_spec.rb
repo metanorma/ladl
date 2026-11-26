@@ -10,7 +10,7 @@ RSpec.describe Ladl::Runtime::Engine do
   end
 
   subject(:result) do
-    Ladl::Runtime::Engine.new(Ladl.iso_iec_profile).label(tree)
+    Ladl::Runtime::Engine.new(Ladl.load_profile(LADL_MN112A_PROFILE)).label(tree)
   end
 
   let(:locals) { result.labels_by_element_id.transform_values(&:value) }
@@ -267,7 +267,7 @@ RSpec.describe Ladl::Runtime::Engine do
 
   describe "engine construction" do
     it "accepts a resolver as well as a profile" do
-      resolver = Ladl::Runtime::Resolver.new(Ladl.iso_iec_profile)
+      resolver = Ladl::Runtime::Resolver.new(Ladl.load_profile(LADL_MN112A_PROFILE))
       tree = el("document", "doc", [el("clause", "c1")])
       expect(described_class.new(resolver).label(tree).local_for(
         tree.each.find { |e| e.id == "c1" }
