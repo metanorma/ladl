@@ -59,6 +59,11 @@ module Ladl
   # conventions verified against xml2rfc and idnits).
   IETF_PROFILE_PATH = File.expand_path("ladl/profiles/ietf_label_style.lml", __dir__).freeze
 
+  # Paths of the bundled IALA label style profiles (guideline family =
+  # newest IALA template G1199; standard family = S1040 Ed 2.0).
+  IALA_GUIDELINE_PROFILE_PATH = File.expand_path("ladl/profiles/iala_guideline_label_style.lml", __dir__).freeze
+  IALA_STANDARD_PROFILE_PATH = File.expand_path("ladl/profiles/iala_standard_label_style.lml", __dir__).freeze
+
   module_function
 
   # Loads a LADL profile from a `.lml` file path.
@@ -74,5 +79,15 @@ module Ladl
   # Loads the bundled IETF label style profile (RFC XML v3 / xml2rfc).
   def ietf_profile
     ProfileLoader.load_file(IETF_PROFILE_PATH)
+  end
+
+  # Loads the bundled IALA guideline-family label style profile (G1199 form).
+  def iala_guideline_profile
+    ProfileLoader.load_file(IALA_GUIDELINE_PROFILE_PATH)
+  end
+
+  # Loads the bundled IALA standard-family label style profile (S1040 form).
+  def iala_standard_profile
+    ProfileLoader.load_file(IALA_STANDARD_PROFILE_PATH)
   end
 end
