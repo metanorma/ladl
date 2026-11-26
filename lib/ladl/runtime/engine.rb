@@ -149,8 +149,6 @@ module Ladl
       end
 
       def children_of(element)
-        return [] unless element.respond_to?(:children)
-
         Array(element.children)
       end
 
@@ -293,7 +291,7 @@ module Ladl
           sequence_value: entry.raw_value,
           position: entry.position,
           labeller_id: labeller.id,
-          content_element: entry.element.respond_to?(:id) ? entry.element.id : nil,
+          content_element: entry.element.id,
         )
         label.element = entry.element
         label
