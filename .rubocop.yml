@@ -1,0 +1,27 @@
+# Policy: Metrics cops are disabled for the current codebase (declared
+# reality — the engine predates gating); everything else runs with
+# defaults. CI does not gate on rubocop (generic-rake runs the spec
+# task); this file is the editor and ratchet baseline.
+AllCops:
+  TargetRubyVersion: 3.2
+  NewCops: enable
+  SuggestExtensions: false
+
+Metrics:
+  Enabled: false
+
+# The engine and its specs mix single- and double-quoted strings and
+# carry long embedded .lml profile strings; unifying is churn without
+# value. Multiline trailing commas match this org's spec style.
+Style/StringLiterals:
+  Enabled: false
+Style/StringLiteralsInInterpolation:
+  Enabled: false
+Style/TrailingCommaInArguments:
+  EnforcedStyleForMultiline: comma
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: comma
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: comma
+Layout/LineLength:
+  Enabled: false
