@@ -5,8 +5,12 @@ require "spec_helper"
 RSpec.describe Ladl::Runtime::Engine do
   # The worked content tree of MN 112 section "Defining a label style",
   # labeled with the MN 112-A ISO/IEC profile.
-  def el(type, id, children = [])
-    Ladl::ContentElement.new(id: id, type: type, children: children)
+  # Trees declare their context associations per MN 112: an element
+  # with children to be labeled carries the LabelContext that scopes
+  # them (label_context:).
+  def el(type, id, children = [], context: nil)
+    Ladl::ContentElement.new(id: id, type: type, label_context: context,
+      children: children)
   end
 
   subject(:result) do
@@ -22,14 +26,14 @@ RSpec.describe Ladl::Runtime::Engine do
         el("clause", "scope", [
           el("subclause", "general"),
           el("subclause", "normative_refs"),
-        ]),
+        ], context: "ClauseContext"),
         el("clause", "terms", [
           el("subclause", "terms_general"),
           el("subclause", "defined_terms", [
             el("subclause", "term_def_subclause"),
             el("figure", "fig_flow"),
           ]),
-        ]),
+        ], context: "ClauseContext"),
         el("clause", "requirements", [
           el("figure", "fig_arch"),
           el("table", "tab_params"),
@@ -37,14 +41,14 @@ RSpec.describe Ladl::Runtime::Engine do
           el("list", "list_config", [
             el("list_item_ordered_level1", "li_a"),
             el("list_item_ordered_level1", "li_b"),
-          ]),
+          ], context: "ListContext"),
           el("note", "note_single"),
-        ]),
+        ], context: "ClauseContext"),
         el("clause", "compliance", [
           el("example", "example_1"),
           el("example", "example_2"),
           el("example", "example_3"),
-        ]),
+        ], context: "ClauseContext"),
         el("annex", "annex_a", [
           el("clause", "annex_a_intro", [
             el("figure", "fig_a1", [
@@ -53,12 +57,13 @@ RSpec.describe Ladl::Runtime::Engine do
             ]),
             el("table", "tab_a1"),
             el("formula", "form_a1"),
-            el("list", "list_a1", [el("list_item_ordered_level1", "li_c")]),
-          ]),
+            el("list", "list_a1", [el("list_item_ordered_level1", "li_c")],
+              context: "ListContext"),
+          ], context: "AnnexClauseContext"),
           el("clause", "annex_a_spec", []),
-        ]),
+        ], context: "AnnexContext"),
         el("annex", "annex_b", []),
-      ])
+      ], context: "DocumentContext")
     end
 
     it "labels clauses per the document context" do
@@ -159,7 +164,7 @@ RSpec.describe Ladl::Runtime::Engine do
         el("annex", "annex#{i}")
       end
     end
-    let(:tree) { el("document", "doc", children) }
+    let(:tree) { el("document", "doc", children, context: "DocumentContext") }
 
     it "labels the 27th annex Annex AA" do
       expect(locals["annex26"]).to eq("Annex Z")
@@ -171,11 +176,13 @@ RSpec.describe Ladl::Runtime::Engine do
     let(:tree) do
       el("document", "doc", [
         el("clause", "c1", [
-          el("subclause", "c1s1", [el("note", "n1"), el("note", "n1b")]),
-          el("subclause", "c1s2", [el("note", "n2")]),
-        ]),
-        el("clause", "c2", [el("note", "n3")]),
-      ])
+          el("subclause", "c1s1", [el("note", "n1"), el("note", "n1b")],
+            context: "SubclauseContext"),
+          el("subclause", "c1s2", [el("note", "n2")],
+            context: "SubclauseContext"),
+        ], context: "ClauseContext"),
+        el("clause", "c2", [el("note", "n3")], context: "ClauseContext"),
+      ], context: "DocumentContext")
     end
 
     it "counts notes per section, restarting in each subclause (isodoc note_anchor_names parity)" do
@@ -196,9 +203,11 @@ RSpec.describe Ladl::Runtime::Engine do
       el("document", "doc", [
         el("clause", "c1", [
           el("figure", "f1", [el("subfigure", "f1a"), el("subfigure", "f1b")]),
-        ]),
-        el("clause", "c2", [el("figure", "f2", [el("subfigure", "f2a")])]),
-      ])
+        ], context: "ClauseContext"),
+        el("clause", "c2", [
+          el("figure", "f2", [el("subfigure", "f2a")]),
+        ], context: "ClauseContext"),
+      ], context: "DocumentContext")
     end
 
     it "restarts subfigure letters per figure" do
@@ -223,11 +232,13 @@ RSpec.describe Ladl::Runtime::Engine do
             el("list_item_ordered_level1", "li2", [
               el("list_item_ordered_level2", "li2_1"),
             ]),
-          ]),
-          el("list", "l2", [el("list_item_ordered_level1", "li3")]),
-          el("list", "ul1", [el("list_item_unordered", "ui1")]),
-        ]),
-      ])
+          ], context: "ListContext"),
+          el("list", "l2", [el("list_item_ordered_level1", "li3")],
+            context: "ListContext"),
+          el("list", "ul1", [el("list_item_unordered", "ui1")],
+            context: "ListContext"),
+        ], context: "ClauseContext"),
+      ], context: "DocumentContext")
     end
 
     it "uses the level sequences a) 1) i) a)" do
@@ -254,8 +265,8 @@ RSpec.describe Ladl::Runtime::Engine do
         el("clause", "c1", [
           el("paragraph", "p1"),
           el("sourcecode", "sc1"),
-        ]),
-      ])
+        ], context: "ClauseContext"),
+      ], context: "DocumentContext")
     end
 
     it "traverses unlabeled element types without assigning labels" do
@@ -268,7 +279,7 @@ RSpec.describe Ladl::Runtime::Engine do
   describe "engine construction" do
     it "accepts a resolver as well as a profile" do
       resolver = Ladl::Runtime::Resolver.new(Ladl.load_profile(LADL_MN112A_PROFILE))
-      tree = el("document", "doc", [el("clause", "c1")])
+      tree = el("document", "doc", [el("clause", "c1")], context: "DocumentContext")
       expect(described_class.new(resolver).label(tree).local_for(
         tree.each.find { |e| e.id == "c1" }
       )).to eq("Clause 1")

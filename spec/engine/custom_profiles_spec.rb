@@ -5,8 +5,9 @@ require "spec_helper"
 # Flavor behavior comes entirely from profiles: the same engine drives a
 # Japanese clause style and an RTL Arabic style without code changes.
 RSpec.describe "profiles drive flavor behavior" do
-  def el(type, id, children = [])
-    Ladl::ContentElement.new(id: id, type: type, children: children)
+  def el(type, id, children = [], context: nil)
+    Ladl::ContentElement.new(id: id, type: type, label_context: context,
+      children: children)
   end
 
   describe "Japanese hierarchical clause labels (MN 112 LabelTemplate example)" do
@@ -49,13 +50,13 @@ RSpec.describe "profiles drive flavor behavior" do
         el("clause", "c1", [
           el("subclause", "c1s1"),
           el("subclause", "c1s2"),
-        ]),
+        ], context: "ClauseContext"),
         el("clause", "c2", [
           el("subclause", "c2s1"),
           el("subclause", "c2s2"),
           el("subclause", "c2s3"),
-        ]),
-      ])
+        ], context: "ClauseContext"),
+      ], context: "DocumentContext")
     end
 
     it "renders clause numbers as 第N章" do
@@ -109,7 +110,7 @@ RSpec.describe "profiles drive flavor behavior" do
     end
 
     let(:tree) do
-      el("document", "doc", [el("clause", "c1"), el("clause", "c2"), el("clause", "c3")])
+      el("document", "doc", [el("clause", "c1"), el("clause", "c2"), el("clause", "c3")], context: "DocumentContext")
     end
 
     it "renders Arabic-script clause numbers right-to-left" do
@@ -152,7 +153,7 @@ RSpec.describe "profiles drive flavor behavior" do
     end
 
     it "renders 1, 4, 7 through the base sequence" do
-      tree = el("document", "doc", [el("clause", "a"), el("clause", "b"), el("clause", "c")])
+      tree = el("document", "doc", [el("clause", "a"), el("clause", "b"), el("clause", "c")], context: "DocumentContext")
       result = Ladl::Runtime::Engine.new(profile).label(tree)
       expect(tree.children.map { |c| result.local_for(c) })
         .to eq(["Step ١", "Step ٤", "Step ٧"])
@@ -162,8 +163,9 @@ end
 
 # MN 112 "Full label style definition of SimpleLabelStyle" worked example.
 RSpec.describe "the MN 112 SimpleLabelStyle worked example" do
-  def el(type, id, children = [])
-    Ladl::ContentElement.new(id: id, type: type, children: children)
+  def el(type, id, children = [], context: nil)
+    Ladl::ContentElement.new(id: id, type: type, label_context: context,
+      children: children)
   end
 
   let(:profile) do
@@ -230,16 +232,16 @@ RSpec.describe "the MN 112 SimpleLabelStyle worked example" do
       el("clause", "clause1", [
         el("subclause", "s11"),
         el("subclause", "s12", [el("figure", "figure1")]),
-      ]),
+      ], context: "ClauseContext"),
       el("clause", "clause2", [
         el("figure", "figure2"),
         el("subclause", "s21"),
         el("subclause", "s22", [
           el("subclause", "s221"),
           el("subclause", "s222", [el("figure", "figure3")]),
-        ]),
-      ]),
-    ])
+        ], context: "SubClauseContext"),
+      ], context: "ClauseContext"),
+    ], context: "DocumentContext")
   end
 
   subject(:result) { Ladl::Runtime::Engine.new(profile).label(tree) }
@@ -261,10 +263,12 @@ RSpec.describe "the MN 112 SimpleLabelStyle worked example" do
     expect(result.local_for(tree.each.find { |e| e.id == "figure3" })).to eq("Figure 3")
   end
 
-  it "renders the figure global template with the parent clause" do
-    # Figures count at the document context, whose anchor is unlabeled;
-    # %parent renders empty per the profile template "%parent, %self".
+  it "renders the figure global template with the carrying clause" do
+    # MN 112's %parent is the label of the context carrier: figure1 is
+    # scoped by clause 1's ClauseContext, so the "%parent, %self"
+    # global renders "Clause 1, Figure 1" — matching the spec's own
+    # global-template example ("Section 1, Figure I").
     expect(result.global_for(tree.each.find { |e| e.id == "figure1" }))
-      .to eq(", Figure 1")
+      .to eq("Clause 1, Figure 1")
   end
 end

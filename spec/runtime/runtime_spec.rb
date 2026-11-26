@@ -148,15 +148,16 @@ RSpec.describe Ladl::Runtime::Result do
 end
 
 RSpec.describe "multilingual label vocabulary (end to end)" do
-  def el(type, id, children = [])
-    Ladl::ContentElement.new(id: id, type: type, children: children)
+  def el(type, id, children = [], context: nil)
+    Ladl::ContentElement.new(id: id, type: type, label_context: context,
+      children: children)
   end
 
   let(:tree) do
     el("document", "doc", [
       el("clause", "c1"),
       el("annex", "a1", [el("figure", "f1"), el("note", "n1")]),
-    ])
+    ], context: "DocumentContext")
   end
 
   it "resolves {key} tokens through the labels dictionary" do
