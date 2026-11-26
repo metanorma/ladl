@@ -2,44 +2,39 @@
 
 module Ladl
   module Runtime
-    # The LADL labeling engine: evaluates a resolved label style against
-    # a content tree, producing a Ladl::Label per labeled element.
+    # The LADL labeling evaluator (MN 112 "Algorithm to resolve the
+    # label for a content element").
     #
-    # The engine implements the MN 112 algorithm to resolve the label
-    # for a content element:
+    # The evaluator is a thin kernel over the three model trees:
     #
-    # 1. Walk the content tree depth-first, maintaining a stack of
-    #    label context instances (the context tree, instantiated) and a
-    #    stack of labeled element entries (for `%pn`/`%parent`
-    #    resolution).
-    # 2. For each element, find the labeller bound to the nearest
-    #    enclosing context instance that can label the element type.
-    # 3. Instantiate the label context the element opens, per the
-    #    profile (a context whose parent is the labeller's context, or
-    #    one named after the element type).
-    # 4. Increment the labeller's counter within the context instance
-    #    the labeller is bound to, scoped by the parent element when the
-    #    labeller has a parent labeller.
-    # 5. Select the label template: the first whose
-    #    LabelContextCondition evaluates to true against the total count
-    #    of similar elements in the same context (MN 112 conditional
-    #    templates); fall back to the first unconditional template.
-    # 6. Render the template pattern with string interpolation.
+    # * The CONTENT TREE arrives from the host: ContentElements carrying
+    #   `type`, and — for elements with children to be labeled — the
+    #   DECLARED `label_context` association. The scoping structure is
+    #   the host's declaration; the evaluator never infers it.
+    # * The CONTEXT TREE and LABELLER TREE come from the profile.
     #
-    # The walk runs first (planning + counting), then labels are
-    # rendered, so conditional templates see final sibling counts.
+    # Resolution, per MN 112:
+    #
+    # 1. From the ContentElement, find its applicable LabelContext: the
+    #    element's own association, else the closest one navigated
+    #    through `parent`.
+    # 2. From that context, find the Labeller applicable to the
+    #    element's type.
+    # 3. The Labeller generates the label: the first LabelTemplate whose
+    #    condition holds (the element count of similar elements in the
+    #    same context), the Sequence value at the element's position in
+    #    that context, and the parent labeller's value where the
+    #    template requires it.
+    #
+    # Counters are scoped by the context instance — the element carrying
+    # the association — so like-labeled elements under different
+    # carriers number independently.
     class Engine
-      # A label context instance: the runtime instantiation of a
-      # LabelContext definition. Counters are keyed by
-      # [frame path, labeller name, parent scope].
-      Frame = Struct.new(:instance_name, :path, :counters, :anchor_entry,
-        keyword_init: true)
-
       # A labeled element planned during the walk.
-      Entry = Struct.new(:element, :type, :labeller, :labeller_name, :frame,
-        :key, :position, :raw_value, :parent_hier, :parent_frame,
-        :hierarchical, :local, :global,
-        keyword_init: true)
+      Entry = Struct.new(:element, :type, :labeller, :labeller_name,
+        :context_name, :carrier_object_id, :carrier_entry, :position,
+        :raw_value, :parent_hier, :parent_entry, :hierarchical, :local,
+        :global, keyword_init: true)
 
       attr_reader :result, :resolved
 
@@ -61,18 +56,18 @@ module Ladl
             "engine requires a Ladl::Profile or Runtime::Resolver, " \
             "got #{resolved.class}"
         end
-        @frames = []
-        @entries = []
         @plan = []
-        @totals = {}
-        @frame_seq = 0
+        @totals = Hash.new(0)
         @result = Result.new
       end
 
       # Labels the content tree rooted at `root` and returns the
       # Ladl::Runtime::Result.
       def label(root)
-        walk(root)
+        @result = Result.new
+        @plan = []
+        @totals = Hash.new(0)
+        walk(root, [])
         render
         @result
       end
@@ -80,15 +75,77 @@ module Ladl
 
       private
 
-      def walk(element)
-        type = element.type.to_s
-        labeller, counter_frame = resolve_labeller(type)
-        frame = open_frame(type, labeller, element)
-        entry = plan_element(element, labeller, counter_frame) if labeller
-        frame.anchor_entry = entry if frame
-        children_of(element).each { |child| walk(child) }
-        @entries.pop if entry
-        @frames.pop if frame
+      # MN 112 step 1 has two independent resolutions:
+      #
+      # * The element's own LABEL: the first context in the association
+      #   chain (self, then ancestors nearest-first) whose labeller
+      #   binds the element's type. An association whose context has no
+      #   labeller for the type is skipped — it scopes but does not
+      #   label (a sub-clause context scopes its notes yet carries no
+      #   sub-clause labeller).
+      # * The element's SCOPE CARRIER for its descendants and its
+      #   `%parent` value: the nearest association (self, then
+      #   ancestors), whose context may bind nothing itself.
+      def walk(element, ancestors)
+        labeller, label_context_name, label_carrier =
+          resolve_own_label(element, ancestors)
+        association = nearest_association(element, ancestors)
+        # The frame carries only the element's OWN declared association
+        # — inherited scopes do not masquerade as associations, so the
+        # carrier of `%parent` stays the element that declared it.
+        frame = { element: element, declared: element.label_context,
+          entry: nil }
+        frame[:entry] = if labeller
+          plan_element(element, labeller, label_context_name,
+            label_carrier, association, ancestors)
+        end
+        ancestors.push(frame)
+        children_of(element).each { |child| walk(child, ancestors) }
+        ancestors.pop
+      end
+
+      # The element's own label: the first context in the association
+      # chain (self, then ancestors nearest-first) whose labeller binds
+      # the element's type. Associations whose context binds no labeller
+      # for the type are skipped — they scope descendants but do not
+      # label this element (a sub-clause context scopes its notes yet
+      # carries no sub-clause labeller).
+      # Returns [labeller, context name, the frame whose context
+      # supplied the label].
+      def resolve_own_label(element, ancestors)
+        if element.label_context
+          labeller = resolve_labeller(element.label_context, element.type.to_s)
+          return [labeller, element.label_context,
+            { element: element, context_name: element.label_context,
+              entry: nil }] if labeller
+        end
+        ancestors.reverse_each do |frame|
+          next unless frame[:declared]
+
+          labeller = resolve_labeller(frame[:declared], element.type.to_s)
+          return [labeller, frame[:declared], frame] if labeller
+        end
+        [nil, nil, nil]
+      end
+
+      # The nearest association frame (self, then ancestors nearest
+      # first).
+      def nearest_association(element, ancestors)
+        if element.label_context
+          return { element: element, context_name: element.label_context,
+            entry: nil }
+        end
+
+        ancestors.reverse_each do |frame|
+          return frame if frame[:declared]
+        end
+        nil
+      end
+
+      # MN 112 step 2: the Labeller applicable to the element's type in
+      # the resolved context.
+      def resolve_labeller(context_name, type)
+        @resolved.labeller_for_context(context_name, type)
       end
 
       def children_of(element)
@@ -97,90 +154,43 @@ module Ladl
         Array(element.children)
       end
 
-      # MN 112 algorithm step 2: the labeller bound to the nearest
-      # enclosing context instance that can label this element type.
-      # Returns [labeller, frame the labeller's counters live in].
-      def resolve_labeller(type)
-        @frames.reverse_each do |frame|
-          labeller = @resolved.labeller_for_context(frame.instance_name, type)
-          return [labeller, frame] if labeller
-        end
-        [nil, nil]
-      end
-
-      # MN 112 algorithm step 3: the label context instance this element
-      # opens, if any. Preference order: a child context of the
-      # element's labeller context matching the element type; a unique
-      # child context of the element's labeller context not already
-      # active; a context named after the element type.
-      def open_frame(type, labeller, element)
-        candidate = nil
-        if labeller
-          child_contexts = @resolved.contexts_with_parent(labeller.context)
-          named = child_contexts.select do |name|
-            @resolved.context_name(name) == type
-          end
-          if named.size == 1
-            candidate = named.first
-          elsif child_contexts.size == 1 && !active?(child_contexts.first)
-            candidate = child_contexts.first
-          end
-        end
-        candidate ||= top_level_named(type)
-        return nil unless candidate
-
-        @frame_seq += 1
-        frame = Frame.new(
-          instance_name: candidate,
-          path: "#{@frames.last ? @frames.last.path : ""}/#{candidate}[#{@frame_seq}]",
-          counters: Hash.new(0),
-        )
-        @frames.push(frame)
-        frame
-      end
-
-      def active?(instance_name)
-        @frames.any? { |f| f.instance_name == instance_name }
-      end
-
-      def top_level_named(type)
-        named = @resolved.contexts_named(type)
-        named.size == 1 ? named.first : nil
-      end
-
-      def plan_element(element, labeller, counter_frame)
-        parent = find_parent_entry(labeller)
+      def plan_element(element, labeller, context_name, label_carrier,
+        scope_association, ancestors)
+        parent = find_parent_entry(labeller, ancestors)
         parent_hier = parent&.hierarchical
-        position = increment_counter(counter_frame, labeller, parent_hier)
+        position = increment_counter(label_carrier, labeller, parent_hier)
         raw = sequence_raw(labeller, position)
         entry = Entry.new(
           element: element,
           type: element.type.to_s,
           labeller: labeller,
           labeller_name: @resolved.instance_name_of(labeller),
-          frame: counter_frame,
-          key: [counter_frame.path, @resolved.instance_name_of(labeller),
-            parent_hier.to_s],
+          context_name: context_name,
+          carrier_object_id: label_carrier[:element].object_id,
+          carrier_entry: scope_association && scope_association[:entry],
           position: position,
           raw_value: raw,
           parent_hier: parent_hier,
-          parent_frame: counter_frame,
+          parent_entry: parent,
           hierarchical: join_hierarchical(parent_hier, raw),
         )
-        @entries.push(entry)
+        # A self-associated element is its own scope instance: `%parent`
+        # resolves to its own label.
+        if scope_association && scope_association[:element].equal?(element)
+          scope_association[:entry] = entry
+          entry.carrier_entry = entry
+        end
         @plan << entry
         entry
       end
 
-      # The nearest enclosing labeled element that supplies the `%pn`
-      # value and the hierarchical counter scope for this labeller:
-      # the nearest entry labeled by a labeller in this labeller's
-      # self-inclusive ancestor chain (the enclosing subclause for
-      # 1.2.1, the enclosing annex for Figure A.1, the containing list
-      # item for a nested list item). Falls back to the nearest entry
-      # of the parent labeller's element type (e.g. an enclosing figure
-      # labeled by the annex figure labeller for a subfigure).
-      def find_parent_entry(labeller)
+      # The nearest ancestor element labeled by this labeller's parent
+      # labeller: it supplies the `%pn` value (its hierarchical label)
+      # and anchors the hierarchical counter scope. Falls back to the
+      # nearest ancestor entry of the parent labeller's element type —
+      # an enclosing figure labeled by the annex figure labeller still
+      # supplies a subfigure's `%pn` across flavor bindings.
+      def find_parent_entry(labeller, ancestors)
         parent_name = labeller.parent
         return nil if parent_name.nil? || parent_name.empty?
 
@@ -191,21 +201,29 @@ module Ladl
             "references undefined parent labeller #{parent_name.inspect}"
         end
         chain = @resolved.ancestor_chain(@resolved.instance_name_of(labeller))
-        @entries.reverse_each do |entry|
-          return entry if chain.include?(entry.labeller_name)
+        ancestors.reverse_each do |frame|
+          entry = frame[:entry]
+          return entry if entry && chain.include?(entry.labeller_name)
         end
-        @entries.reverse_each do |entry|
-          return entry if entry.type == parent_labeller.type
+        ancestors.reverse_each do |frame|
+          entry = frame[:entry]
+          return entry if entry && entry.type == parent_labeller.type
         end
         nil
       end
 
-      def increment_counter(frame, labeller, parent_hier)
-        key = [frame.path, @resolved.instance_name_of(labeller), parent_hier.to_s]
-        count = frame.counters[key] + 1
-        frame.counters[key] = count
-        @totals[key] = count
-        count
+      # The position of the element in its context: the count of like-
+      # labeled elements under the same carrier, restarted per
+      # hierarchical scope.
+      def increment_counter(carrier, labeller, parent_hier)
+        key = counter_key(carrier[:element].object_id,
+          @resolved.instance_name_of(labeller), parent_hier)
+        @totals[key] += 1
+        @totals[key]
+      end
+
+      def counter_key(carrier_id, labeller_name, parent_hier)
+        [carrier_id, labeller_name, parent_hier.to_s]
       end
 
       def sequence_raw(labeller, position)
@@ -221,27 +239,19 @@ module Ladl
         "#{parent_hier}.#{raw}"
       end
 
-      # MN 112 algorithm step 5: select the first template whose
-      # condition evaluates to true; if no condition evaluates to true,
-      # select the first template without a condition, or the first
-      # template if all have conditions.
-      def select_template(templates, total)
-        templates.find { |template| template.condition&.evaluate(total) } ||
-          templates.find { |template| template.condition.nil? } ||
-          templates.first
-      end
-
+      # MN 112 step 3: template selection (the first condition that
+      # holds, else the first unconditional, else the first), then
+      # rendering with the sequence value, the parent-labeller value and
+      # the carrier element's label.
       def render
         @plan.each do |entry|
-          total = @totals.fetch(entry.key, 1)
           labeller = entry.labeller
-          local_template = select_template(
-            Array(labeller.template), total
-          )
-          unless local_template
-            raise Ladl::ResolutionError,
-              "labeller #{entry.labeller_name.inspect} has no label template"
-          end
+          total = @totals.fetch(counter_key(entry.carrier_object_id,
+            entry.labeller_name, entry.parent_hier), 1)
+          local_template = select_template(Array(labeller.template), total)
+          raise Ladl::ResolutionError,
+            "labeller #{entry.labeller_name.inspect} has no label template" unless local_template
+
           bindings = base_bindings(entry)
           entry.local = Renderer.render(
             local_template.pattern, bindings.merge(pattern: local_template.pattern)
@@ -260,12 +270,17 @@ module Ladl
         end
       end
 
+      def select_template(templates, total)
+        templates.find { |template| template.condition&.evaluate(total) } ||
+          templates.find { |template| template.condition.nil? } ||
+          templates.first
+      end
+
       def base_bindings(entry)
-        anchor = entry.parent_frame&.anchor_entry
         {
           n: entry.raw_value,
           pn: entry.parent_hier,
-          parent: anchor&.global,
+          parent: entry.carrier_entry&.global,
           labels: @labels,
         }
       end

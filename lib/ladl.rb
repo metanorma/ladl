@@ -49,9 +49,6 @@ module Ladl
   # Labeling engine
   autoload :Runtime, "ladl/runtime"
 
-  # Input adapters (thin wrappers over host document models)
-  autoload :Adapters, "ladl/adapters"
-
   module_function
 
   # Loads a LADL profile from a `.lml` file path. The engine ships NO

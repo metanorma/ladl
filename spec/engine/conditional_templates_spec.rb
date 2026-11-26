@@ -3,8 +3,9 @@
 require "spec_helper"
 
 RSpec.describe "conditional label templates (MN 112 LabelContextCondition)" do
-  def el(type, id, children = [])
-    Ladl::ContentElement.new(id: id, type: type, children: children)
+  def el(type, id, children = [], context: nil)
+    Ladl::ContentElement.new(id: id, type: type, label_context: context,
+      children: children)
   end
 
   def note_profile
@@ -13,8 +14,9 @@ RSpec.describe "conditional label templates (MN 112 LabelContextCondition)" do
 
   it "uses the numbered template when the context has more than one note" do
     tree = el("document", "doc", [
-      el("clause", "c1", [el("note", "n1"), el("note", "n2")]),
-    ])
+      el("clause", "c1", [el("note", "n1"), el("note", "n2")],
+        context: "ClauseContext"),
+    ], context: "DocumentContext")
     result = Ladl::Runtime::Engine.new(note_profile).label(tree)
     expect(result.local_for(tree.each.find { |e| e.id == "n1" })).to eq("NOTE 1")
     expect(result.local_for(tree.each.find { |e| e.id == "n2" })).to eq("NOTE 2")
@@ -22,17 +24,18 @@ RSpec.describe "conditional label templates (MN 112 LabelContextCondition)" do
 
   it "uses the unnumbered template for a single note" do
     tree = el("document", "doc", [
-      el("clause", "c1", [el("note", "n1")]),
-    ])
+      el("clause", "c1", [el("note", "n1")], context: "ClauseContext"),
+    ], context: "DocumentContext")
     result = Ladl::Runtime::Engine.new(note_profile).label(tree)
     expect(result.local_for(tree.each.find { |e| e.id == "n1" })).to eq("NOTE")
   end
 
   it "does the same for examples" do
     tree = el("document", "doc", [
-      el("clause", "c1", [el("example", "e1")]),
-      el("clause", "c2", [el("example", "e2"), el("example", "e3")]),
-    ])
+      el("clause", "c1", [el("example", "e1")], context: "ClauseContext"),
+      el("clause", "c2", [el("example", "e2"), el("example", "e3")],
+        context: "ClauseContext"),
+    ], context: "DocumentContext")
     result = Ladl::Runtime::Engine.new(note_profile).label(tree)
     expect(result.local_for(tree.each.find { |e| e.id == "e1" })).to eq("EXAMPLE")
     expect(result.local_for(tree.each.find { |e| e.id == "e2" })).to eq("EXAMPLE 1")
@@ -65,7 +68,7 @@ RSpec.describe "conditional label templates (MN 112 LabelContextCondition)" do
       }
     LML
     profile = Ladl::ProfileLoader.load_lml(source)
-    tree = el("document", "doc", [el("note", "x1"), el("note", "x2")])
+    tree = el("document", "doc", [el("note", "x1"), el("note", "x2")], context: "DocumentContext")
     result = Ladl::Runtime::Engine.new(profile).label(tree)
     # both conditions match at count 2; the first (GT) wins
     expect(result.local_for(tree.each.find { |e| e.id == "x1" })).to eq("GT 1")
@@ -93,7 +96,7 @@ RSpec.describe "conditional label templates (MN 112 LabelContextCondition)" do
       }
     LML
     profile = Ladl::ProfileLoader.load_lml(source)
-    tree = el("document", "doc", [el("note", "x1")])
+    tree = el("document", "doc", [el("note", "x1")], context: "DocumentContext")
     result = Ladl::Runtime::Engine.new(profile).label(tree)
     expect(result.local_for(tree.each.find { |e| e.id == "x1" })).to eq("EQ 1")
   end
@@ -114,7 +117,7 @@ RSpec.describe "conditional label templates (MN 112 LabelContextCondition)" do
       }
     LML
     profile = Ladl::ProfileLoader.load_lml(source)
-    tree = el("document", "doc", [el("note", "x1")])
+    tree = el("document", "doc", [el("note", "x1")], context: "DocumentContext")
     expect { Ladl::Runtime::Engine.new(profile).label(tree) }
       .to raise_error(Ladl::ResolutionError, /no label template/)
   end

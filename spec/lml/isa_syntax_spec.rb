@@ -55,7 +55,7 @@ RSpec.describe Ladl::Lml::Parser do
   it "produces equivalent profiles from both spellings" do
     a = load(mn112_syntax)
     b = load(lml_syntax)
-    tree = Ladl::ContentElement.new(id: "doc", type: "document",
+    tree = Ladl::ContentElement.new(id: "doc", type: "document", label_context: "DocumentContext",
       children: [Ladl::ContentElement.new(id: "c1", type: "clause")])
     ra = Ladl::Runtime::Engine.new(a).label(tree)
     rb = Ladl::Runtime::Engine.new(b).label(tree)
