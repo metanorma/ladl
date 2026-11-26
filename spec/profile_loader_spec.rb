@@ -32,8 +32,8 @@ RSpec.describe Ladl::ProfileLoader do
       expect(labeller.type).to eq("clause")
       expect(labeller.context).to eq("DocumentContext")
       expect(labeller.sequence).to eq("DecimalNumericSequence")
-      expect(labeller.template.first.pattern).to eq("Clause %n")
-      expect(labeller.global_template.first.pattern).to eq("Clause %n")
+      expect(labeller.template.first.pattern).to eq("{clause} %n")
+      expect(labeller.global_template.first.pattern).to eq("{clause} %n")
     end
 
     it "hydrates the subclause labeller with its parent labeller" do
@@ -45,9 +45,9 @@ RSpec.describe Ladl::ProfileLoader do
     it "hydrates the note labeller with conditional templates" do
       labeller = profile.labeller("NoteLabeller")
       single, multiple = labeller.template
-      expect(single.pattern).to eq("NOTE")
+      expect(single.pattern).to eq("{note}")
       expect(single.condition).to be_nil
-      expect(multiple.pattern).to eq("NOTE %n")
+      expect(multiple.pattern).to eq("{note} %n")
       expect(multiple.condition.type).to eq("element_count_gt")
       expect(multiple.condition.threshold).to eq(1)
     end
