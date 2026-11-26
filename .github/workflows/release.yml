@@ -77,19 +77,7 @@ jobs:
       - name: Install and smoke the released gem
         run: |
           gem install "ladl:${{ steps.version.outputs.version }}" --no-document
-          # Boot the shipped gem from its own load paths and assert the
-          # bundled profiles load and label: the ISO/IEC profile must
-          # produce "Clause 1" (packaging regressions — gemspec globs
-          # dropping the .lml profiles — must fail the release run).
-          ruby -e '
-            require "ladl";
-            tree = Ladl::ContentElement.new(id: "doc", type: "document",
-              children: [Ladl::ContentElement.new(id: "c1", type: "clause"),
-                         Ladl::ContentElement.new(id: "a1", type: "annex")]);
-            r = Ladl::Runtime::Engine.new(Ladl.iso_iec_profile).label(tree);
-            raise "iso profile broken" unless r.labels_by_element_id["c1"].value == "Clause 1";
-            raise "iso annex broken" unless r.labels_by_element_id["a1"].value == "Annex A";
-            g = Ladl::Runtime::Engine.new(Ladl.ietf_profile).label(tree);
-            raise "ietf profile broken" unless g.labels_by_element_id["c1"].value == "1.";
-            raise "ietf annex broken" unless g.labels_by_element_id["a1"].value == "Appendix A."
-          '
+          # Real spec file, run against the installed gem: boots from the
+          # gem's own load paths and asserts the bundled profiles label
+          # correctly (gemspec-glob packaging regressions fail the run).
+          ruby .github/scripts/test_installed_gem.rb
