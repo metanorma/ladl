@@ -5,29 +5,32 @@ require "spec_helper"
 RSpec.describe Ladl::Runtime::Engine, "golden tree under both realizations" do
   LADL_MN112A_YAML_PROFILE = File.expand_path("../fixtures/iso_iec_label_style.yaml", __dir__)
 
-  def el(type, id, children = [])
-    Ladl::ContentElement.new(id: id, type: type, children: children)
+  def el(type, id, children = [], context: nil)
+    Ladl::ContentElement.new(id: id, type: type, label_context: context,
+      children: children)
   end
 
   let(:tree) do
     el("document", "doc", [
-      el("clause", "scope", [el("subclause", "general")]),
+      el("clause", "scope", [el("subclause", "general")], context: "ClauseContext"),
       el("clause", "requirements", [
         el("figure", "fig_arch"),
         el("table", "tab_params"),
         el("formula", "form_load"),
-        el("list", "list_config", [el("list_item_ordered_level1", "li_a")]),
+        el("list", "list_config", [el("list_item_ordered_level1", "li_a")],
+          context: "ListContext"),
         el("note", "note_single"),
-      ]),
-      el("clause", "compliance", [el("example", "example_1")]),
+      ], context: "ClauseContext"),
+      el("clause", "compliance", [el("example", "example_1")],
+        context: "ClauseContext"),
       el("annex", "annex_a", [
         el("clause", "annex_a_intro", [
           el("figure", "fig_a1", [el("subfigure", "fig_a1_a")]),
           el("table", "tab_a1"),
-        ]),
-      ]),
+        ], context: "AnnexClauseContext"),
+      ], context: "AnnexContext"),
       el("annex", "annex_b", []),
-    ])
+    ], context: "DocumentContext")
   end
 
   def labels(path)
