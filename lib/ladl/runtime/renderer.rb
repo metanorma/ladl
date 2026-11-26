@@ -14,8 +14,16 @@ module Ladl
     # * `%parent` — the rendered global label of the parent context
     #               element
     # * `%self`   — the rendered local label of the element itself
+    # * `{key}`   — a label vocabulary key, resolved through the labels
+    #               dictionary supplied with the profile (the host
+    #               document's i18n table, e.g. annex: "Annexe" for
+    #               French). Profiles carry the labeling SCHEME; the
+    #               vocabulary is language data and comes from the host.
+    #               Keys absent from the dictionary fall back to the
+    #               English default vocabulary; keys absent from both
+    #               are profile errors.
     module Renderer
-      PLACEHOLDER = /%pn|%parent|%self|%n/.freeze
+      PLACEHOLDER = /%pn|%parent|%self|%n|\{([A-Za-z][A-Za-z0-9_]*)\}/.freeze
 
       module_function
 
@@ -32,7 +40,21 @@ module Ladl
             text(bindings[:parent], placeholder, bindings)
           when "%self"
             text(bindings[:self], placeholder, bindings)
+          when /\A\{([A-Za-z][A-Za-z0-9_]*)\}\z/
+            label_key(Regexp.last_match(1), bindings)
           end
+        end
+      end
+
+      def label_key(key, bindings)
+        labels = bindings[:labels] || {}
+        return labels[key].to_s if labels.key?(key)
+
+        Defaults::LABEL_VOCABULARY.fetch(key) do
+          raise Ladl::ResolutionError,
+            "template #{bindings[:pattern].inspect} uses {#{key}} " \
+            "but the key is in neither the labels dictionary nor the " \
+            "default vocabulary"
         end
       end
 

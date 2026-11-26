@@ -6,5 +6,6 @@ module Ladl
     autoload :Engine, "ladl/runtime/engine"
     autoload :Renderer, "ladl/runtime/renderer"
     autoload :Result, "ladl/runtime/result"
+    autoload :Defaults, "ladl/runtime/defaults"
   end
 end

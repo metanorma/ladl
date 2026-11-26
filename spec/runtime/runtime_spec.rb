@@ -42,6 +42,21 @@ RSpec.describe Ladl::Runtime::Renderer do
     expect { described_class.render("%pn.%n", n: "1") }
       .to raise_error(Ladl::ResolutionError, /no parent labeller/)
   end
+
+  it "resolves {key} tokens through the labels dictionary" do
+    expect(described_class.render("{annex} %n", n: "1", labels: { "annex" => "Annexe" }))
+      .to eq("Annexe 1")
+  end
+
+  it "falls back to the default vocabulary for keys absent from the dictionary" do
+    expect(described_class.render("{clause} %n", n: "1", labels: { "annex" => "Annexe" }))
+      .to eq("Clause 1")
+  end
+
+  it "raises on keys absent from both the dictionary and the defaults" do
+    expect { described_class.render("{willnever} %n", n: "1", labels: {}) }
+      .to raise_error(Ladl::ResolutionError, /willnever/)
+  end
 end
 
 RSpec.describe Ladl::Runtime::Resolver do
@@ -129,5 +144,35 @@ RSpec.describe Ladl::Runtime::Result do
     expect(result.label_for(e2).value).to eq("Figure 1")
     expect(result.map(&:value)).to eq(["Clause 1", "Figure 1"])
     expect(result.labels_by_element_id).to have_key("e1")
+  end
+end
+
+RSpec.describe "multilingual label vocabulary (end to end)" do
+  def el(type, id, children = [])
+    Ladl::ContentElement.new(id: id, type: type, children: children)
+  end
+
+  let(:tree) do
+    el("document", "doc", [
+      el("clause", "c1"),
+      el("annex", "a1", [el("figure", "f1"), el("note", "n1")]),
+    ])
+  end
+
+  it "resolves {key} tokens through the labels dictionary" do
+    result = Ladl::Runtime::Engine.new(Ladl.load_profile(LADL_MN112A_PROFILE), labels: {
+      "clause" => "Article", "annex" => "Annexe", "figure" => "Figure",
+      "note" => "Note",
+    }).label(tree)
+    by_id = result.labels_by_element_id
+    expect(by_id["c1"].value).to eq("Article 1")
+    expect(by_id["a1"].value).to eq("Annexe A")
+  end
+
+  it "falls back to the English default vocabulary" do
+    result = Ladl::Runtime::Engine.new(Ladl.load_profile(LADL_MN112A_PROFILE)).label(tree)
+    by_id = result.labels_by_element_id
+    expect(by_id["c1"].value).to eq("Clause 1")
+    expect(by_id["a1"].value).to eq("Annex A")
   end
 end

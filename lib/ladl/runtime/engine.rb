@@ -45,7 +45,12 @@ module Ladl
 
       # @param resolved [Runtime::Resolver, Ladl::Profile] a resolved
       #   label style, or a profile to resolve
-      def initialize(resolved)
+      # @param labels [Hash{String => String}] the label vocabulary for
+      #   `{key}` tokens in template patterns — the host document's i18n
+      #   table (e.g. annex: "Annexe"); keys absent from the dictionary
+      #   fall back to the English default vocabulary
+      def initialize(resolved, labels: {})
+        @labels = labels || {}
         @resolved = case resolved
         when Runtime::Resolver
           resolved
@@ -261,6 +266,7 @@ module Ladl
           n: entry.raw_value,
           pn: entry.parent_hier,
           parent: anchor&.global,
+          labels: @labels,
         }
       end
 
