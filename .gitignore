@@ -1,6 +1,11 @@
 /.bundle/
+/.rubocop_http_cache/
+/doc/
 /pkg/
 /coverage/
+/spec/reports/
+/tmp/
+/Gemfile.lock
 /Gemfile.lock.bak
 *.gem
 .DS_Store

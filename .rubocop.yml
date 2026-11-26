@@ -3,7 +3,7 @@
 # defaults. CI does not gate on rubocop (generic-rake runs the spec
 # task); this file is the editor and ratchet baseline.
 AllCops:
-  TargetRubyVersion: 3.2
+  TargetRubyVersion: 3.1
   NewCops: enable
   SuggestExtensions: false
 
