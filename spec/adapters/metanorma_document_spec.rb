@@ -177,7 +177,20 @@ RSpec.describe Ladl::Adapters::MetanormaDocument do
           blocks: [MetanormaStubs::TableBlock.new("t1")],
           subsections: [
             MetanormaStubs::HierarchicalSection.new(
-              id: "a1", blocks: [MetanormaStubs::FigureBlock.new("fa1")]
+              id: "a1",
+              blocks: [
+                MetanormaStubs::FigureBlock.new("fa1"),
+                MetanormaStubs::NoteBlock.new("an1"),
+                MetanormaStubs::ExampleBlock.new("aex1"),
+              ],
+              subsections: [
+                MetanormaStubs::HierarchicalSection.new(
+                  id: "a1s1", blocks: [MetanormaStubs::NoteBlock.new("an2")]
+                ),
+              ],
+            ),
+            MetanormaStubs::HierarchicalSection.new(
+              id: "a2", blocks: [MetanormaStubs::NoteBlock.new("an3")]
             ),
           ],
         ),
@@ -193,11 +206,16 @@ RSpec.describe Ladl::Adapters::MetanormaDocument do
       expect(by_id["f1"].value).to eq("Figure 1")
       expect(by_id["anxA"].value).to eq("Annex A")
       expect(by_id["a1"].value).to eq("A.1")
+      expect(by_id["a1s1"].value).to eq("A.1.1")
       expect(by_id["fa1"].value).to eq("Figure A.1")
       expect(by_id["t1"].value).to eq("Table A.1")
-      expect(by_id["n1"].value).to eq("NOTE 1")
-      expect(by_id["n1"].global_value).to eq("Clause 1, NOTE 1")
-      expect(by_id["n2"].value).to eq("NOTE 2")
+      expect(by_id["n1"].value).to eq("NOTE")
+      expect(by_id["n1"].global_value).to eq("Clause 1, NOTE")
+      expect(by_id["n2"].value).to eq("NOTE")
+      expect(by_id["an1"].value).to eq("NOTE")
+      expect(by_id["an2"].value).to eq("NOTE")
+      expect(by_id["an3"].value).to eq("NOTE")
+      expect(by_id["aex1"].value).to eq("EXAMPLE")
     end
   end
 

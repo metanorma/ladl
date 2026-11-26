@@ -55,6 +55,10 @@ module Ladl
   # Path of the bundled ISO/IEC label style profile (MN 112 worked profile).
   ISO_IEC_PROFILE_PATH = File.expand_path("ladl/profiles/iso_iec_label_style.lml", __dir__).freeze
 
+  # Path of the bundled IETF label style profile (metanorma-ietf#355,
+  # conventions verified against xml2rfc and idnits).
+  IETF_PROFILE_PATH = File.expand_path("ladl/profiles/ietf_label_style.lml", __dir__).freeze
+
   module_function
 
   # Loads a LADL profile from a `.lml` file path.
@@ -65,5 +69,10 @@ module Ladl
   # Loads the bundled ISO/IEC label style profile (MN 112, ISO/IEC DIR 2).
   def iso_iec_profile
     ProfileLoader.load_file(ISO_IEC_PROFILE_PATH)
+  end
+
+  # Loads the bundled IETF label style profile (RFC XML v3 / xml2rfc).
+  def ietf_profile
+    ProfileLoader.load_file(IETF_PROFILE_PATH)
   end
 end

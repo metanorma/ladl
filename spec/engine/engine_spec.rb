@@ -171,21 +171,22 @@ RSpec.describe Ladl::Runtime::Engine do
     let(:tree) do
       el("document", "doc", [
         el("clause", "c1", [
-          el("subclause", "c1s1", [el("note", "n1")]),
+          el("subclause", "c1s1", [el("note", "n1"), el("note", "n1b")]),
           el("subclause", "c1s2", [el("note", "n2")]),
         ]),
         el("clause", "c2", [el("note", "n3")]),
       ])
     end
 
-    it "counts notes per clause across subclauses" do
+    it "counts notes per section, restarting in each subclause (isodoc note_anchor_names parity)" do
       expect(locals["n1"]).to eq("NOTE 1")
-      expect(locals["n2"]).to eq("NOTE 2")
+      expect(locals["n1b"]).to eq("NOTE 2")
+      expect(locals["n2"]).to eq("NOTE")
       expect(locals["n3"]).to eq("NOTE")
     end
 
-    it "anchors global note references at the clause" do
-      expect(globals["n2"]).to eq("Clause 1, NOTE 2")
+    it "anchors global note references at the enclosing section" do
+      expect(globals["n2"]).to eq("1.2, NOTE")
       expect(globals["n3"]).to eq("Clause 2, NOTE")
     end
   end

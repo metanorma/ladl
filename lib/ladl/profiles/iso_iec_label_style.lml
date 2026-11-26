@@ -18,6 +18,11 @@ instance ISOIECLabelStyle < LabelStyle {
     "id:subclause_labeller",
     "id:annex_labeller",
     "id:annex_clause_labeller",
+    "id:annex_subclause_labeller",
+    "id:annex_note_labeller",
+    "id:annex_example_labeller",
+    "id:subclause_note_labeller",
+    "id:subclause_example_labeller",
     "id:figure_labeller",
     "id:annex_figure_labeller",
     "id:subfigure_labeller",
@@ -54,6 +59,8 @@ instance ISOIECLabelStyle < LabelStyle {
     AnnexGlobalLabelTemplate,
     AnnexClauseLabelTemplate,
     AnnexClauseGlobalLabelTemplate,
+    AnnexSubclauseLabelTemplate,
+    AnnexSubclauseGlobalLabelTemplate,
     FigureLabelTemplate,
     FigureGlobalLabelTemplate,
     AnnexFigureLabelTemplate,
@@ -214,6 +221,53 @@ instance AnnexClauseLabeller < Labeller {
   definition "Labeller for clauses within annexes"
 }
 
+// Annex subclauses: ISO/IEC documents label clause descendants inside
+// annexes hierarchically (A.1.1, A.1.1.1), per the current ISO engine
+// (isodoc annex_names recursion) and the ISO/IEC Directives Part 2.
+instance AnnexSubclauseLabelTemplate < LabelTemplate {
+  pattern = "%pn.%n"
+  definition "Template for local annex subclause references"
+}
+
+instance AnnexSubclauseGlobalLabelTemplate < LabelTemplate {
+  pattern = "%pn.%n"
+  definition "Template for global annex subclause references"
+}
+
+instance AnnexSubclauseLabeller < Labeller {
+  id = "annex_subclause_labeller"
+  sequence = ArabicNumericSequence
+  context = AnnexClauseContext
+  parent = AnnexClauseLabeller
+  type = "subclause"
+  template = AnnexSubclauseLabelTemplate
+  global_template = AnnexSubclauseGlobalLabelTemplate
+  definition "Labeller for subclauses within annex clauses"
+}
+
+// Notes and examples inside annexes: bound to the annex clause context
+// so they label (and restart per annex clause) instead of falling
+// through to the main-document labellers.
+instance AnnexNoteLabeller < Labeller {
+  id = "annex_note_labeller"
+  sequence = ArabicNumericSequence
+  context = AnnexClauseContext
+  type = "note"
+  template = [NoteSingleLabelTemplate, NoteMultipleLabelTemplate]
+  global_template = [NoteSingleGlobalLabelTemplate, NoteMultipleGlobalLabelTemplate]
+  definition "Labeller for notes within annex clauses"
+}
+
+instance AnnexExampleLabeller < Labeller {
+  id = "annex_example_labeller"
+  sequence = ArabicNumericSequence
+  context = AnnexClauseContext
+  type = "example"
+  template = [ExampleSingleLabelTemplate, ExampleMultipleLabelTemplate]
+  global_template = [ExampleSingleGlobalLabelTemplate, ExampleMultipleGlobalLabelTemplate]
+  definition "Labeller for examples within annex clauses"
+}
+
 // Figure labeling
 instance FigureLabelTemplate < LabelTemplate {
   pattern = "Figure %n"
@@ -359,6 +413,20 @@ instance NoteLabeller < Labeller {
   definition "Labeller for notes in clauses with conditional templates based on note count"
 }
 
+// Notes count per section in ISO/IEC documents: the current ISO engine
+// (isodoc note_anchor_names) restarts the counter for every clause and
+// subclause, so notes inside subclauses bind to SubclauseContext rather
+// than continuing the enclosing clause's counter.
+instance SubclauseNoteLabeller < Labeller {
+  id = "subclause_note_labeller"
+  sequence = ArabicNumericSequence
+  context = SubclauseContext
+  type = "note"
+  template = [NoteSingleLabelTemplate, NoteMultipleLabelTemplate]
+  global_template = [NoteSingleGlobalLabelTemplate, NoteMultipleGlobalLabelTemplate]
+  definition "Labeller for notes within subclauses (counter restarts per subclause)"
+}
+
 // Example labeling
 instance ExampleSingleLabelTemplate < LabelTemplate {
   pattern = "EXAMPLE"
@@ -396,6 +464,18 @@ instance ExampleLabeller < Labeller {
   template = [ExampleSingleLabelTemplate, ExampleMultipleLabelTemplate]
   global_template = [ExampleSingleGlobalLabelTemplate, ExampleMultipleGlobalLabelTemplate]
   definition "Labeller for examples in clauses with conditional templates based on example count"
+}
+
+// Examples count per section in ISO/IEC documents, like notes (isodoc
+// example_anchor_names restarts the counter per clause and subclause).
+instance SubclauseExampleLabeller < Labeller {
+  id = "subclause_example_labeller"
+  sequence = ArabicNumericSequence
+  context = SubclauseContext
+  type = "example"
+  template = [ExampleSingleLabelTemplate, ExampleMultipleLabelTemplate]
+  global_template = [ExampleSingleGlobalLabelTemplate, ExampleMultipleGlobalLabelTemplate]
+  definition "Labeller for examples within subclauses (counter restarts per subclause)"
 }
 
 // Formula labeling

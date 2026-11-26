@@ -9,9 +9,11 @@ profiles, evaluates them against a content tree, and produces the
 labels.
 
 The engine is shared; flavor behavior comes entirely from profiles. The
-bundled profile, `lib/ladl/profiles/iso_iec_label_style.lml`, is the
+bundled profiles are `lib/ladl/profiles/iso_iec_label_style.lml` (the
 MN 112-A worked profile instance encoding the ISO/IEC Directives Part 2
-labeling conventions.
+labeling conventions) and `lib/ladl/profiles/ietf_label_style.lml` (the
+Internet-Draft/RFC conventions, verified against the xml2rfc text
+writer and idnits).
 
 == Installation
 
@@ -215,10 +217,13 @@ the clause type inside annexes. The engine instantiates the child
 context of the element's labeller context (`AnnexClauseContext` for
 annex clauses) and falls back to name matching.
 
-6. *MN 112-A profile gaps*. The profile provides no labellers for
-subclauses inside annexes (A.1.1), nor for notes/examples inside
-annexes; such elements remain unlabeled. Profile extension needed for
-full ISO/IEC coverage.
+6. *MN 112-A profile gaps*. RESOLVED 2026-11-26 by engine evidence: the
+current ISO engine (isodoc `annex_names` recursion) labels annex
+subclauses hierarchically (A.1.1, A.1.1.1) and numbers annex
+notes/examples, so the profile now carries `AnnexSubclauseLabeller`,
+`AnnexNoteLabeller` and `AnnexExampleLabeller` (bound to
+`AnnexClauseContext`). The suite covers A.1.1 and annex
+notes/examples end to end.
 
 7. *`cycle_length`*. "Length after which sequence notation expands" is
 underdefined; the engine implements bijective (spreadsheet-style)
@@ -243,11 +248,15 @@ released LutaML grammar (lutaml-lml) does not accept. The engine ships
 its own parser for that syntax subset; aligning the two grammars (or
 amending MN 112 to a supported syntax) is an open decision.
 
-12. *Counter restart for notes in subclauses*. The profile binds the
-note labeller to `ClauseContext`; notes count per clause across
-subclauses, and `%parent` anchors at the clause. If ISO/IEC requires
-per-subclause note counting, the profile (not the engine) needs
-adjustment.
+12. *Counter restart for notes in subclauses*. RESOLVED 2026-11-26 by
+engine evidence: isodoc's `note_anchor_names`/`example_anchor_names`
+restart the counter for every clause and subclause (`Counter.new` per
+section; `increment_label` returns an empty label for a singleton), so
+ISO/IEC note numbering IS per section. The profile now carries
+`SubclauseNoteLabeller`/`SubclauseExampleLabeller` bound to
+`SubclauseContext`: lone notes render "NOTE", notes continue
+"NOTE 1, NOTE 2" within one subclause and restart in the next, and
+global refs anchor at the enclosing section ("1.2, NOTE").
 
 == Development
 

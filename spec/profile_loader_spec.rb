@@ -14,16 +14,16 @@ RSpec.describe Ladl::ProfileLoader do
       expect(profile.style.definition).to include("ISO/IEC Directives, Part 2")
     end
 
-    it "loads 20 labellers" do
-      expect(profile.labeller_names.size).to eq(20)
+    it "loads 25 labellers" do
+      expect(profile.labeller_names.size).to eq(25)
     end
 
     it "loads 6 contexts" do
       expect(profile.context_names.size).to eq(6)
     end
 
-    it "loads 39 label templates" do
-      expect(profile.template_names.size).to eq(39)
+    it "loads 41 label templates" do
+      expect(profile.template_names.size).to eq(41)
     end
 
     it "hydrates the clause labeller with nested templates" do
