@@ -243,10 +243,14 @@ sequence models; the engine carries both and treats `direction` as
 taking precedence.
 
 11. *Profile syntax vs lutaml-lml*. MN 112 profiles use unquoted
-instance names with `<` inheritance (`instance Foo < Bar`), which the
-released LutaML grammar (lutaml-lml) does not accept. The engine ships
-its own parser for that syntax subset; aligning the two grammars (or
-amending MN 112 to a supported syntax) is an open decision.
+instance names with `<` inheritance (`instance Foo < Bar`); the
+released LutaML grammar (lutaml-lml, RS 3001) spells inheritance as a
+body statement (`isa Bar;`) with quoted instance names. The parser now
+ACCEPTS BOTH SPELLINGS (2026-11-26), so a profile written in either
+syntax loads and labels identically; the bundled profiles keep the MN
+112 spelling. Full grammar unification — extending the RS 3001 grammar
+with `<` inheritance, or amending MN 112 to `isa` — remains a
+language-level decision on the lutaml-lml side.
 
 12. *Counter restart for notes in subclauses*. RESOLVED 2026-11-26 by
 engine evidence: isodoc's `note_anchor_names`/`example_anchor_names`

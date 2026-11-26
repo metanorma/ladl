@@ -29,6 +29,7 @@ module Ladl
       def initialize(text)
         @tokens = Lexer.new(text).tokens
         @pos = 0
+        @pending_isa = nil
       end
 
       def parse
@@ -72,6 +73,10 @@ module Ladl
         expect(:punct, "{")
         attributes = parse_body
         expect(:punct, "}")
+        # lutaml-lml spells inheritance as a body statement (`isa Base;`)
+        # rather than the MN 112 `< Base` form; both are accepted.
+        base ||= @pending_isa
+        @pending_isa = nil
         Instance.new(name: name, base: base, attributes: attributes)
       end
 
@@ -101,6 +106,9 @@ module Ladl
 
         if token == [:ident, "definition"]
           attributes["definition"] = parse_definition
+        elsif token == [:ident, "isa"]
+          @pending_isa = parse_name
+          advance if peek && peek == [:punct, ";"]
         else
           raise ParseError, "expected attribute name, got #{token.inspect}" unless token[0] == :ident
 
@@ -207,7 +215,7 @@ module Ladl
 
           ch = @text[@pos]
           case ch
-          when "{", "}", "[", "]", "=", ",", "<"
+          when "{", "}", "[", "]", "=", ",", "<", ";"
             @pos += 1
             [:punct, ch]
           when '"'
