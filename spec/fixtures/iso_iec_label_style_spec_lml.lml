@@ -119,12 +119,12 @@ LabelContext "SubclauseContext" {
 
 // Clause templates
 LabelTemplate "ClauseLabelTemplate" {
-  pattern = "Clause %n"
+  pattern = "%n"
   definition "Template for local clause references"
 }
 
 LabelTemplate "ClauseGlobalLabelTemplate" {
-  pattern = "Clause %n"
+  pattern = "Clause %pn.%n"
   definition "Template for global clause references"
 }
 
