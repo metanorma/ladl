@@ -195,15 +195,18 @@ ISO/IEC and IETF profiles now bind clause numbering to
 numerals ١, ٢, ٣). `ArabicIndicNumericSequence` (the RTL example's
 name in MN 112) remains as the explicit RTL-flavored spelling.
 
-2. *`%parent` in the Japanese example*. MN 112's Japanese clause
-example (`%parentの%n`, expected 二の一) uses `%parent` where only
-`%pn` semantics (parent sequence value) produce the shown output; by
-the `%parent` definition (rendered global label) the output is
-第二章の一. The engine follows the definition; the example is flagged.
+2. *`%parent` in the Japanese example*. RESOLVED 2026-11-27: the ISO/IEC
+style templates in the bundled fixtures carried invented term words
+(`Clause %n`), which made `%parent` render `Clause 1` instead of the
+pure value. MN 112 is self-consistent: the Japanese chapter template is
+`%n` (rendering 二), so `%parentの%n` → 二の一 reproduces exactly, and
+`%parent.%n` → 1.1 likewise. The fixture templates now match MN 112
+(term words appear only where MN 112 writes them, as in the subfigure
+`Figure %pn %n`).
 
-3. *SimpleLabelStyle template*. MN 112's SimpleLabelStyle example wires
-the subclause template as `%parent.%n` but states the desired output
-"1.1", which requires `%pn.%n`. The engine follows the stated outputs.
+3. *SimpleLabelStyle template*. RESOLVED 2026-11-27 together with 2:
+with the pure templates (`%n`, `%parent.%n`), the stated output "1.1"
+reproduces exactly.
 
 4. *`%pn` beyond one level*. RESOLVED by the spec's own example: the
 MN 112 subfigure template (`Figure %pn %n)` → "Figure A.1 a)") is only
