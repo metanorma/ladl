@@ -120,7 +120,7 @@ instances:
 - name: ClauseGlobalLabelTemplate
   type: LabelTemplate
   properties:
-    pattern: "%n"
+    pattern: "Clause %n"
     definition: "Template for global clause references"
 
 - name: ClauseLabeller
@@ -206,7 +206,7 @@ instances:
 - name: AnnexClauseGlobalLabelTemplate
   type: LabelTemplate
   properties:
-    pattern: "%pn.%n"
+    pattern: "Clause %pn.%n"
     definition: "Template for global annex clause references"
 
 - name: AnnexClauseLabeller
