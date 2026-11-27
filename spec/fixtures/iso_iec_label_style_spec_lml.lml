@@ -124,7 +124,7 @@ LabelTemplate "ClauseLabelTemplate" {
 }
 
 LabelTemplate "ClauseGlobalLabelTemplate" {
-  pattern = "%n"
+  pattern = "Clause %n"
   definition "Template for global clause references"
 }
 
@@ -199,7 +199,7 @@ LabelTemplate "AnnexClauseLabelTemplate" {
 }
 
 LabelTemplate "AnnexClauseGlobalLabelTemplate" {
-  pattern = "%pn.%n"
+  pattern = "Clause %pn.%n"
   definition "Template for global annex clause references"
 }
 
