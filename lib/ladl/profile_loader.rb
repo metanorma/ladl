@@ -21,9 +21,15 @@ module Ladl
       "Label" => -> { Ladl::Label },
     }.freeze
 
+    BUILTIN_SEQUENCE_NAMES = Sequences::Registry.defaults.keys.freeze
+
     class << self
       def load_lml(text)
         new.load_lml(text)
+      end
+
+      def load_yaml(text)
+        new.load_yaml(text)
       end
 
       def load_file(path)
@@ -32,24 +38,62 @@ module Ladl
     end
 
     def load_file(path)
-      load_lml(File.read(path, encoding: "UTF-8"))
+      case File.extname(path).downcase
+      when ".yaml", ".yml"
+        load_yaml(File.read(path, encoding: "UTF-8"))
+      else
+        load_lml(File.read(path, encoding: "UTF-8"))
+      end
     end
 
     def load_lml(text)
       document = Lml::Parser.parse(text)
-      @index = {}
-      document.instances.each do |instance|
-        raise Ladl::ParseError,
-          "duplicate instance name in profile: #{instance.name}" if @index.key?(instance.name)
+      instances = document.instances
+      check_duplicate_names(instances)
+      build_profile(instances)
+    end
 
-        @index[instance.name] = instance
-      end
-      build_profile(document)
+    def load_yaml(text)
+      require_relative "yaml_loader"
+      YamlLoader.load(text)
+    end
+
+    # Shared pipeline for the realizations: index the parsed instances,
+    # verify references resolve, and build the Profile.
+    def load_instances(instances, declared_names:)
+      check_duplicate_names(instances)
+      check_references(instances, declared_names)
+      build_profile(instances)
     end
 
     private
 
-    def build_profile(document)
+    def check_duplicate_names(instances)
+      names = instances.map(&:name)
+      repeated = names.tally.select { |_, count| count > 1 }
+      raise Ladl::ParseError,
+        "duplicate instance name in profile: #{repeated.keys.join(", ")}" unless repeated.empty?
+    end
+
+    # MN 112 "Label style realizations": a reference resolves to a
+    # declared instance or a built-in sequence. Refs are recorded at
+    # parse/conversion time — a bare LML identifier and a YAML
+    # `{ref:}` mapping are references; quoted strings never are.
+    def check_references(instances, declared_names)
+      instances.each do |instance|
+        instance.references.each do |ref|
+          next if declared_names.include?(ref)
+
+          raise Ladl::ResolutionError,
+            "instance #{instance.name.inspect} references undefined " \
+            "instance #{ref.inspect}"
+        end
+      end
+    end
+
+    def build_profile(instances)
+      @index = {}
+      instances.each { |instance| @index[instance.name] = instance }
       built = {}
       @index.each do |name, instance|
         built[name] = hydrate(name, instance)
