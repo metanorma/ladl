@@ -62,10 +62,13 @@ RSpec.describe Ladl::Runtime::Engine, "golden tree under both realizations" do
   it "labels the main-document clauses in document order" do
     lml_labels = labels(lml_profile_path)
 
-    expect(lml_labels.fetch("scope").first).to eq("Clause 1")
+    expect(lml_labels.fetch("scope").first).to eq("1")
+    expect(lml_labels.fetch("scope").last).to eq("Clause 1")
     expect(lml_labels.fetch("general").first).to eq("1.1")
-    expect(lml_labels.fetch("requirements").first).to eq("Clause 2")
-    expect(lml_labels.fetch("compliance").first).to eq("Clause 3")
+    expect(lml_labels.fetch("general").last).to eq("Clause 1.1")
+    expect(lml_labels.fetch("requirements").first).to eq("2")
+    expect(lml_labels.fetch("requirements").last).to eq("Clause 2")
+    expect(lml_labels.fetch("compliance").first).to eq("3")
   end
 
   it "labels figures, tables and formulas through their sequences" do

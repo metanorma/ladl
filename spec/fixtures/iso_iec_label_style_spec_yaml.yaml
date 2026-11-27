@@ -114,13 +114,13 @@ instances:
 - name: ClauseLabelTemplate
   type: LabelTemplate
   properties:
-    pattern: "Clause %n"
+    pattern: "%n"
     definition: "Template for local clause references"
 
 - name: ClauseGlobalLabelTemplate
   type: LabelTemplate
   properties:
-    pattern: "Clause %n"
+    pattern: "Clause %pn.%n"
     definition: "Template for global clause references"
 
 - name: ClauseLabeller
