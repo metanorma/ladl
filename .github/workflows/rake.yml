@@ -15,5 +15,10 @@ on:
 jobs:
   rake:
     uses: metanorma/ci/.github/workflows/generic-rake.yml@main
+    with:
+      # No LUTAML_CI_PAT_TOKEN on this repo: the cascade dispatch dies
+      # on github.token ("Resource not accessible by integration").
+      # Releases run via the release workflow's own dispatch instead.
+      cascade: false
     secrets:
       pat_token: ${{ secrets.LUTAML_CI_PAT_TOKEN }}
