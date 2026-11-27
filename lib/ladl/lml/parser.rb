@@ -63,21 +63,51 @@ module Ladl
       end
 
       def parse_instance
-        expect(:ident, "instance")
+        token = advance
+        raise ParseError, "expected an instance declaration, got #{token.inspect}" unless token&.first == :ident
+
+        if token == [:ident, "instance"]
+          parse_typed_instance(nil)
+        elsif peek && peek.first == :string
+          # MN 112 LML realization form: `Type "Name" { ... }`
+          parse_typed_instance(token[1])
+        else
+          # lutaml-lml form: `Type { isa Base; ... }` — the isa body
+          # statement supplies the base class.
+          expect(:punct, "{")
+          @current_refs = []
+          attributes = parse_body
+          expect(:punct, "}")
+          base = @pending_isa
+          @pending_isa = nil
+          raise Ladl::ParseError,
+            "instance #{token[1].inspect} declares no base class (use " \
+            "`instance Name < Base`, `Type \"Name\"`, or an `isa` statement)" unless base
+
+          Instance.new(name: token[1], base: base, attributes: attributes,
+                       references: @current_refs.uniq)
+        end
+      end
+
+      # `instance Name [< Base] { ... }` (draft) and, when `type` is
+      # given, the MN 112 realization form `Type "Name" { ... }`.
+      def parse_typed_instance(type)
         name = parse_name
-        base = nil
-        if peek && peek == [:punct, "<"]
+        base = type
+        if base.nil? && peek && peek == [:punct, "<"]
           advance
           base = expect(:ident)[1]
         end
         expect(:punct, "{")
+        @current_refs = []
         attributes = parse_body
         expect(:punct, "}")
         # lutaml-lml spells inheritance as a body statement (`isa Base;`)
         # rather than the MN 112 `< Base` form; both are accepted.
         base ||= @pending_isa
         @pending_isa = nil
-        Instance.new(name: name, base: base, attributes: attributes)
+        Instance.new(name: name, base: base, attributes: attributes,
+                     references: @current_refs.uniq)
       end
 
       def parse_name
@@ -146,7 +176,20 @@ module Ladl
           when "true" then true
           when "false" then false
           when "null" then nil
-          else ident
+          when "ref"
+            # MN 112 LML realization reference: ref:(Name) — equivalent
+            # to the draft syntax's bare identifier, recorded as a
+            # reference either way.
+            expect(:punct, ":")
+            expect(:punct, "(")
+            name = parse_name
+            expect(:punct, ")")
+            @current_refs << name
+            name
+          else
+            # Draft syntax bare reference (e.g. `sequence = Foo`).
+            @current_refs << ident
+            ident
           end
         when :punct
           if token == [:punct, "["]
@@ -215,7 +258,7 @@ module Ladl
 
           ch = @text[@pos]
           case ch
-          when "{", "}", "[", "]", "=", ",", "<", ";"
+          when "{", "}", "[", "]", "=", ",", "<", ";", ":", "(", ")"
             @pos += 1
             [:punct, ch]
           when '"'

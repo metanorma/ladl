@@ -51,10 +51,13 @@ module Ladl
 
   module_function
 
-  # Loads a LADL profile from a `.lml` file path. The engine ships NO
-  # bundled profiles: per the release plan, each flavor profile lives in
-  # its flavor gem and each taste profile in metanorma-taste (one LADL
-  # profile extraction per flavor gem / per taste).
+  # Loads a LADL profile from a file path, dispatching on the
+  # realization: `.lml` (the LML realization) or `.yaml`/`.yml` (the
+  # YAML realization) — MN 112 "Label style realizations" defines both
+  # as equally valid, and equivalent realizations derive the same
+  # instance data. The engine ships NO bundled profiles: per the
+  # release plan, each flavor profile lives in its flavor gem and each
+  # taste profile in metanorma-taste.
   def load_profile(path)
     ProfileLoader.load_file(path)
   end
