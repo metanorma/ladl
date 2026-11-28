@@ -15,6 +15,7 @@ module Ladl
       "LabelContext" => -> { Ladl::LabelContext },
       "Labeller" => -> { Ladl::Labeller },
       "LabelTemplate" => -> { Ladl::LabelTemplate },
+      "LabelTemplateVariant" => -> { Ladl::LabelTemplateVariant },
       "NumericSequence" => -> { Ladl::NumericSequence },
       "CharacterSequence" => -> { Ladl::CharacterSequence },
       "ContentElement" => -> { Ladl::ContentElement },
@@ -143,6 +144,7 @@ module Ladl
       attrs = instance.attributes.dup
       substitute_template_ref(attrs, "template")
       substitute_template_ref(attrs, "global_template")
+      substitute_variant_ref(attrs, "variants")
       attrs
     end
 
@@ -151,6 +153,32 @@ module Ladl
 
       value = attrs[key]
       attrs[key] = resolve_template_list(value)
+    end
+
+    # Label template variant references are substituted with the
+    # referenced variant instances' attribute hashes so that from_hash
+    # hydrates nested LabelTemplateVariant objects (MN 112 language
+    # variants are declared as instances and referenced by name).
+    def substitute_variant_ref(attrs, key)
+      return unless attrs.key?(key)
+
+      refs = Array(attrs[key])
+      attrs[key] = refs.map do |ref|
+        case ref
+        when String
+          variant_instance = @index[ref]
+          unless variant_instance
+            raise Ladl::ResolutionError,
+              "template references undefined variant instance #{ref.inspect}"
+          end
+          variant_instance.attributes.dup
+        when Hash
+          ref.dup
+        else
+          raise Ladl::ParseError,
+            "invalid variant reference: #{ref.inspect}"
+        end
+      end
     end
 
     def resolve_template_list(value)
@@ -163,7 +191,7 @@ module Ladl
             raise Ladl::ResolutionError,
               "labeller references undefined template instance #{ref.inspect}"
           end
-          template_instance.attributes.dup
+          resolve_template_instance(template_instance)
         when Hash
           ref.dup
         else
@@ -171,6 +199,12 @@ module Ladl
             "invalid template reference: #{ref.inspect}"
         end
       end
+    end
+
+    def resolve_template_instance(template_instance)
+      attrs = template_instance.attributes.dup
+      substitute_variant_ref(attrs, "variants")
+      attrs
     end
   end
 end

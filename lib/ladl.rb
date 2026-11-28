@@ -32,6 +32,7 @@ module Ladl
   autoload :LabelContext, "ladl/label_context"
   autoload :Labeller, "ladl/labeller"
   autoload :LabelTemplate, "ladl/label_template"
+  autoload :LabelTemplateVariant, "ladl/label_template_variant"
   autoload :LabelContextCondition, "ladl/label_context_condition"
   autoload :NumericSequence, "ladl/numeric_sequence"
   autoload :CharacterSequence, "ladl/character_sequence"

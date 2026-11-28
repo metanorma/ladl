@@ -44,8 +44,13 @@ module Ladl
       #   `{key}` tokens in template patterns — the host document's i18n
       #   table (e.g. annex: "Annexe"); keys absent from the dictionary
       #   fall back to the English default vocabulary
-      def initialize(resolved, labels: {})
+      # @param lang [String, nil] the host language (BCP-47, e.g. "fr"):
+      #   templates carrying a variant declared for that language render
+      #   the variant pattern; templates without a matching variant
+      #   render their base pattern
+      def initialize(resolved, labels: {}, lang: nil)
         @labels = labels || {}
+        @lang = lang
         @resolved = case resolved
         when Runtime::Resolver
           resolved
@@ -252,7 +257,8 @@ module Ladl
 
           bindings = base_bindings(entry)
           entry.local = Renderer.render(
-            local_template.pattern, bindings.merge(pattern: local_template.pattern)
+            local_template.pattern_for(@lang),
+            bindings.merge(pattern: local_template.pattern),
           )
           globals = Array(labeller.global_template)
           entry.global = if globals.empty?
@@ -260,7 +266,7 @@ module Ladl
           else
             global_template = select_template(globals, total)
             Renderer.render(
-              global_template.pattern,
+              global_template.pattern_for(@lang),
               bindings.merge(pattern: global_template.pattern, self: entry.local),
             )
           end
