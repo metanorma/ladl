@@ -729,14 +729,30 @@ instance TableNoteLabeller < Labeller {
 // Notes to entry are always numbered, even when a single one, and
 // restart within each terminological entry (16.5.9). The term word is
 // its own vocabulary key: the Directives designation is "Note",
-// distinct from the text note "NOTE".
+// distinct from the text note "NOTE". The French designation carries
+// a different structure ("Note 1 à l'article"), declared as a
+// language variant on the template instead of a separate profile.
+instance NoteToEntryLabelTemplateFrVariant < LabelTemplateVariant {
+  lang = "fr"
+  pattern = "{note_to_entry} %n à l'article"
+  definition "French designation for notes to terminological entries"
+}
+
 instance NoteToEntryLabelTemplate < LabelTemplate {
   pattern = "{note_to_entry} %n to entry"
+  variants = [NoteToEntryLabelTemplateFrVariant]
   definition "Template for notes to terminological entries"
+}
+
+instance NoteToEntryGlobalLabelTemplateFrVariant < LabelTemplateVariant {
+  lang = "fr"
+  pattern = "%parent, {note_to_entry} %n à l'article"
+  definition "French designation for global references to notes to terminological entries"
 }
 
 instance NoteToEntryGlobalLabelTemplate < LabelTemplate {
   pattern = "%parent, {note_to_entry} %n to entry"
+  variants = [NoteToEntryGlobalLabelTemplateFrVariant]
   definition "Template for global references to notes to terminological entries"
 }
 
