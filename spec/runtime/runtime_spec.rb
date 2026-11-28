@@ -82,9 +82,12 @@ RSpec.describe Ladl::Runtime::Resolver do
 
   it "lists child contexts by parent" do
     expect(resolver.contexts_with_parent("DocumentContext"))
-      .to contain_exactly("ClauseContext", "AnnexContext")
+      .to contain_exactly(
+        "ClauseContext", "AnnexContext", "FigureContext", "TableContext",
+        "BibliographyContext", "IntroductionContext",
+      )
     expect(resolver.contexts_with_parent("ClauseContext"))
-      .to contain_exactly("SubclauseContext", "ListContext")
+      .to contain_exactly("SubclauseContext", "ListContext", "TermEntryContext")
   end
 
   it "lists contexts named after an element type" do

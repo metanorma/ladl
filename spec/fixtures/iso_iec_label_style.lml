@@ -30,7 +30,10 @@ instance ISOIECLabelStyle < LabelStyle {
     "id:subfigure_labeller",
     "id:table_labeller",
     "id:annex_table_labeller",
+    "id:figure_note_labeller",
+    "id:table_note_labeller",
     "id:note_labeller",
+    "id:note_to_entry_labeller",
     "id:example_labeller",
     "id:formula_labeller",
     "id:annex_formula_labeller",
@@ -40,7 +43,10 @@ instance ISOIECLabelStyle < LabelStyle {
     "id:ordered_list_item_level1_labeller",
     "id:ordered_list_item_level2_labeller",
     "id:ordered_list_item_level3_labeller",
-    "id:ordered_list_item_level4_labeller"
+    "id:ordered_list_item_level4_labeller",
+    "id:footnote_labeller",
+    "id:bibliography_item_labeller",
+    "id:introduction_subclause_labeller"
   ]
 
   // References to all sequences used in this style
@@ -77,6 +83,14 @@ instance ISOIECLabelStyle < LabelStyle {
     NoteMultipleLabelTemplate,
     NoteSingleGlobalLabelTemplate,
     NoteMultipleGlobalLabelTemplate,
+    NoteToEntryLabelTemplate,
+    NoteToEntryGlobalLabelTemplate,
+    FootnoteLabelTemplate,
+    FootnoteGlobalLabelTemplate,
+    BibliographyItemLabelTemplate,
+    BibliographyItemGlobalLabelTemplate,
+    IntroSubclauseLabelTemplate,
+    IntroSubclauseGlobalLabelTemplate,
     ExampleSingleLabelTemplate,
     ExampleMultipleLabelTemplate,
     ExampleSingleGlobalLabelTemplate,
@@ -103,7 +117,12 @@ instance ISOIECLabelStyle < LabelStyle {
     SubclauseContext,
     AnnexContext,
     AnnexClauseContext,
-    ListContext
+    ListContext,
+    FigureContext,
+    TableContext,
+    TermEntryContext,
+    BibliographyContext,
+    IntroductionContext
   ]
 }
 
@@ -646,4 +665,153 @@ instance OrderedListItemLevel4Labeller < Labeller {
   type = "list_item_ordered_level4"
   template = OrderedListItemLevel4LabelTemplate
   definition "Labeller for fourth level ordered list items"
+}
+
+// Labeling categories required by the ISO/IEC Directives, Part 2 that
+// bind to their own element context rather than the text of a clause:
+// notes to figures (28.5.4), notes to tables (29.5.1), notes to
+// terminological entries (16.5.9), footnotes (26.3), numbered
+// bibliography entries (21.4) and Introduction subclauses (13.4).
+
+instance FigureContext < LabelContext {
+  name = "figure"
+  parent = DocumentContext
+  definition "Context for figures and the notes they carry"
+}
+
+instance TableContext < LabelContext {
+  name = "table"
+  parent = DocumentContext
+  definition "Context for tables and the notes they carry"
+}
+
+instance TermEntryContext < LabelContext {
+  name = "term_entry"
+  parent = ClauseContext
+  definition "Context for terminological entries within the terms clause"
+}
+
+instance BibliographyContext < LabelContext {
+  name = "bibliography"
+  parent = DocumentContext
+  definition "Context for the bibliography and its numbered entries"
+}
+
+instance IntroductionContext < LabelContext {
+  name = "introduction"
+  parent = DocumentContext
+  definition "Context for the unnumbered Introduction and its numbered subclauses"
+}
+
+// Notes to figures number independently from the notes to the text and
+// restart for each new figure; a single note is unnumbered (28.5.4).
+instance FigureNoteLabeller < Labeller {
+  id = "figure_note_labeller"
+  sequence = DecimalNumericSequence
+  context = FigureContext
+  type = "note"
+  template = [NoteSingleLabelTemplate, NoteMultipleLabelTemplate]
+  global_template = [NoteSingleGlobalLabelTemplate, NoteMultipleGlobalLabelTemplate]
+  definition "Labeller for notes within figures (counter restarts per figure)"
+}
+
+// Notes to tables follow the same rules as notes to figures (29.5.1).
+instance TableNoteLabeller < Labeller {
+  id = "table_note_labeller"
+  sequence = DecimalNumericSequence
+  context = TableContext
+  type = "note"
+  template = [NoteSingleLabelTemplate, NoteMultipleLabelTemplate]
+  global_template = [NoteSingleGlobalLabelTemplate, NoteMultipleGlobalLabelTemplate]
+  definition "Labeller for notes within tables (counter restarts per table)"
+}
+
+// Notes to entry are always numbered, even when a single one, and
+// restart within each terminological entry (16.5.9). The term word is
+// its own vocabulary key: the Directives designation is "Note",
+// distinct from the text note "NOTE".
+instance NoteToEntryLabelTemplate < LabelTemplate {
+  pattern = "{note_to_entry} %n to entry"
+  definition "Template for notes to terminological entries"
+}
+
+instance NoteToEntryGlobalLabelTemplate < LabelTemplate {
+  pattern = "%parent, {note_to_entry} %n to entry"
+  definition "Template for global references to notes to terminological entries"
+}
+
+instance NoteToEntryLabeller < Labeller {
+  id = "note_to_entry_labeller"
+  sequence = DecimalNumericSequence
+  context = TermEntryContext
+  type = "note"
+  template = NoteToEntryLabelTemplate
+  global_template = NoteToEntryGlobalLabelTemplate
+  definition "Labeller for notes to terminological entries (always numbered)"
+}
+
+// Footnotes are numbered sequentially throughout the document; the
+// designation is the bare number (26.3, 26.4).
+instance FootnoteLabelTemplate < LabelTemplate {
+  pattern = "%n"
+  definition "Template for footnote designations"
+}
+
+instance FootnoteGlobalLabelTemplate < LabelTemplate {
+  pattern = "%n"
+  definition "Template for global references to footnotes"
+}
+
+instance FootnoteLabeller < Labeller {
+  id = "footnote_labeller"
+  sequence = DecimalNumericSequence
+  context = DocumentContext
+  type = "footnote"
+  template = FootnoteLabelTemplate
+  global_template = FootnoteGlobalLabelTemplate
+  definition "Labeller for footnotes (sequential throughout the document)"
+}
+
+// Bibliography entries may be numbered to simplify cross-referencing;
+// the reference form is the bracketed number (21.4).
+instance BibliographyItemLabelTemplate < LabelTemplate {
+  pattern = "[%n]"
+  definition "Template for numbered bibliography entries"
+}
+
+instance BibliographyItemGlobalLabelTemplate < LabelTemplate {
+  pattern = "[%n]"
+  definition "Template for global references to numbered bibliography entries"
+}
+
+instance BibliographyItemLabeller < Labeller {
+  id = "bibliography_item_labeller"
+  sequence = DecimalNumericSequence
+  context = BibliographyContext
+  type = "bibliography_item"
+  template = BibliographyItemLabelTemplate
+  global_template = BibliographyItemGlobalLabelTemplate
+  definition "Labeller for numbered bibliography entries"
+}
+
+// The Introduction itself carries no clause number; where it is
+// subdivided, its subclauses are numbered 0.1, 0.2 (13.4).
+instance IntroSubclauseLabelTemplate < LabelTemplate {
+  pattern = "0.%n"
+  definition "Template for first level Introduction subclauses"
+}
+
+instance IntroSubclauseGlobalLabelTemplate < LabelTemplate {
+  pattern = "0.%n"
+  definition "Template for global references to Introduction subclauses"
+}
+
+instance IntroductionSubclauseLabeller < Labeller {
+  id = "introduction_subclause_labeller"
+  sequence = DecimalNumericSequence
+  context = IntroductionContext
+  type = "subclause"
+  template = IntroSubclauseLabelTemplate
+  global_template = IntroSubclauseGlobalLabelTemplate
+  definition "Labeller for Introduction subclauses (0.1, 0.2, ...)"
 }
