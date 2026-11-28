@@ -20,6 +20,7 @@ module Ladl
         "inequality" => "Inequality",
         "note" => "NOTE",
         "note_xref" => "NOTE",
+        "note_to_entry" => "Note",
         "example" => "EXAMPLE",
         "example_xref" => "EXAMPLE",
         "termexample" => "EXAMPLE",
