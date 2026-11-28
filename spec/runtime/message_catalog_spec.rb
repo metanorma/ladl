@@ -3,7 +3,7 @@
 require "spec_helper"
 
 # MN 112 label catalogs: catalog values are Fluent message patterns
-# resolved by the fluent-min engine. Plain values stay plain words;
+# resolved by the rhoella engine. Plain values stay plain words;
 # designations that need engine values carry `{ $n }`, `{ $pn }`,
 # `{ $parent }` and `{ $self }` placeables bound from the labeller
 # bindings. Language selection is catalog selection: the host hands

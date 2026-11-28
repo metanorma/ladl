@@ -4,10 +4,10 @@ source "https://rubygems.org"
 
 gemspec
 
-# Temporary: resolved from git until fluent-min publishes to rubygems
+# Temporary: resolved from git until rhoella publishes to rubygems
 # (blocked on its one-time trusted-publisher registration). Remove this
-# line once fluent-min 0.1.0 is on rubygems.org.
-gem "fluent-min", git: "https://github.com/metanorma/fluent-min", ref: "9d7e9c3b1b92f2edfa1cb550d42642e960e8dff3"
+# line once rhoella 0.1.0 is on rubygems.org.
+gem "rhoella", git: "https://github.com/rhoella/rhoella", ref: "02086876874a1d3e3270df64d1869cec8a56dd3d"
 
 gem "rake"
 gem "rspec"
