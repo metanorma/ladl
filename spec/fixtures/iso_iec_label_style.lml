@@ -731,7 +731,7 @@ instance TableNoteLabeller < Labeller {
 // designation is a Fluent catalog message: the English default
 // vocabulary carries "Note { $n } to entry", a French catalog
 // carries "Note { $n } à l'article" — the designation structure
-// itself is language data, resolved by the fluent-min engine.
+// itself is language data, resolved by the rhoella engine.
 instance NoteToEntryLabelTemplate < LabelTemplate {
   pattern = "{note_to_entry}"
   definition "Template for notes to terminological entries"

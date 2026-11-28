@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "fluent_min"
+require "rhoella"
 
 module Ladl
   module Runtime
@@ -49,19 +49,19 @@ module Ladl
       end
 
       # The catalog value is a Fluent message pattern (Metanorma's
-      # l10n layer is the fluent-min engine): term words are plain
+      # l10n layer is the rhoella engine): term words are plain
       # messages, designations that need engine values carry
       # `{ $n }`, `{ $pn }`, `{ $parent }` and `{ $self }` placeables
       # bound from the labeller bindings.
       def label_key(key, bindings)
         value = catalog_value(key, bindings)
-        FluentMin.format(value, {
+        Rhoella.format(value, {
           "n" => bindings[:n].to_s,
           "pn" => bindings[:pn].to_s,
           "parent" => bindings[:parent].to_s,
           "self" => bindings[:self].to_s,
-        }, messages: message_table(bindings))
-      rescue FluentMin::Error => e
+        }, message_table(bindings))
+      rescue Rhoella::Error => e
         raise Ladl::ResolutionError,
           "template #{bindings[:pattern].inspect} resolves " \
           "{#{key}} to the message #{value.inspect}, which failed " \
