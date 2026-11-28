@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "fluent_min"
+
 module Ladl
   module Runtime
     # MN 112 "string interpolation" — substitutes variable placeholders
@@ -46,7 +48,35 @@ module Ladl
         end
       end
 
+      # The catalog value is a Fluent message pattern (Metanorma's
+      # l10n layer is the fluent-min engine): term words are plain
+      # messages, designations that need engine values carry
+      # `{ $n }`, `{ $pn }`, `{ $parent }` and `{ $self }` placeables
+      # bound from the labeller bindings.
       def label_key(key, bindings)
+        value = catalog_value(key, bindings)
+        FluentMin.format(value, {
+          "n" => bindings[:n].to_s,
+          "pn" => bindings[:pn].to_s,
+          "parent" => bindings[:parent].to_s,
+          "self" => bindings[:self].to_s,
+        }, messages: message_table(bindings))
+      rescue FluentMin::Error => e
+        raise Ladl::ResolutionError,
+          "template #{bindings[:pattern].inspect} resolves " \
+          "{#{key}} to the message #{value.inspect}, which failed " \
+          "to render: #{e.message}"
+      end
+
+      # The host catalog plus the English default vocabulary form the
+      # message catalog that references inside catalog messages resolve
+      # against.
+      def message_table(bindings)
+        table = Defaults::LABEL_VOCABULARY.merge(bindings[:labels] || {})
+        table.transform_values(&:to_s)
+      end
+
+      def catalog_value(key, bindings)
         labels = bindings[:labels] || {}
         return labels[key].to_s if labels.key?(key)
 

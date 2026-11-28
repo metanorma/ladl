@@ -31,6 +31,7 @@ Gem::Specification.new do |spec|
     Dir["LICENSE.txt"] + Dir["README.adoc"]
   spec.require_paths = ["lib"]
 
+  spec.add_dependency "fluent-min", "~> 0.1"
   spec.add_dependency "lutaml-model", "~> 0.8"
 
   spec.add_development_dependency "rake", "~> 13"
