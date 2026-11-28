@@ -727,16 +727,18 @@ instance TableNoteLabeller < Labeller {
 }
 
 // Notes to entry are always numbered, even when a single one, and
-// restart within each terminological entry (16.5.9). The term word is
-// its own vocabulary key: the Directives designation is "Note",
-// distinct from the text note "NOTE".
+// restart within each terminological entry (16.5.9). The whole
+// designation is a Fluent catalog message: the English default
+// vocabulary carries "Note { $n } to entry", a French catalog
+// carries "Note { $n } à l'article" — the designation structure
+// itself is language data, resolved by the fluent-min engine.
 instance NoteToEntryLabelTemplate < LabelTemplate {
-  pattern = "{note_to_entry} %n to entry"
+  pattern = "{note_to_entry}"
   definition "Template for notes to terminological entries"
 }
 
 instance NoteToEntryGlobalLabelTemplate < LabelTemplate {
-  pattern = "%parent, {note_to_entry} %n to entry"
+  pattern = "{note_to_entry_xref}"
   definition "Template for global references to notes to terminological entries"
 }
 
